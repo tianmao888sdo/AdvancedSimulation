@@ -45,12 +45,24 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Scripts\CarStatus.cs" />
+     <Compile Include="Assets\Scripts\Business\Core\CarStatus.cs" />
+     <Compile Include="Assets\Scripts\Business\Core\Global.cs" />
+     <Compile Include="Assets\Scripts\Business\Core\IManager.cs" />
+     <Compile Include="Assets\Scripts\Business\Core\IRelease.cs" />
+     <Compile Include="Assets\Scripts\Business\Core\IUpdate.cs" />
+     <Compile Include="Assets\Scripts\Business\System\Car\CarAttributes.cs" />
+     <Compile Include="Assets\Scripts\Business\System\Car\CarControlCenter.cs" />
+     <Compile Include="Assets\Scripts\Business\System\Input\KeyInputManager.cs" />
+     <Compile Include="Assets\Scripts\Business\System\Input\SignalInputManager.cs" />
+     <Compile Include="Assets\Scripts\Business\System\Pool\PoolManager.cs" />
+     <Compile Include="Assets\Scripts\Business\System\Resources\LocalResManager.cs" />
+     <Compile Include="Assets\Scripts\Business\System\Resources\QueueLoadManager.cs" />
+     <Compile Include="Assets\Scripts\Business\System\Resources\ResInfo.cs" />
+     <Compile Include="Assets\Scripts\Business\System\Resources\ResLoader.cs" />
+     <Compile Include="Assets\Scripts\Business\System\Scene\AbsScene.cs" />
+     <Compile Include="Assets\Scripts\Business\System\Sfx\SfxManager.cs" />
+     <Compile Include="Assets\Scripts\Business\System\Vfx\VfxManager.cs" />
      <Compile Include="Assets\Scripts\Com\ChangeTrace.cs" />
-     <Compile Include="Assets\Scripts\System\Car\CarAttributes.cs" />
-     <Compile Include="Assets\Scripts\System\Car\CarControlCenter.cs" />
-     <Compile Include="Assets\Scripts\System\Communication\KeyInputManager.cs" />
-     <Compile Include="Assets\Scripts\System\Communication\SignalInputManager.cs" />
  <Reference Include="UnityEngine.UI">
  <HintPath>D:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>

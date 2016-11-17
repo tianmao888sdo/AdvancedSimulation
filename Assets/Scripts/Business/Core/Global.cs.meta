@@ -1,5 +1,7 @@
 fileFormatVersion: 2
 guid: 4a3bbf2f05ae74a47af254d715d2f6f8
+labels:
+- Weapon
 timeCreated: 1479287897
 licenseType: Pro
 MonoImporter:

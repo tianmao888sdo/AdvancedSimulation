@@ -201,7 +201,7 @@ public sealed class ResLoader:IRelease
             default:
                 if (m_loaderRequest == null)
                 {
-                    m_loaderRequest = m_assetBundle.LoadAsync(m_srcName, GetSystemType(m_type));
+                    m_loaderRequest = m_assetBundle.LoadAssetAsync(m_srcName, GetSystemType(m_type));
                 }
                 break;
         }

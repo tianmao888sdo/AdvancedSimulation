@@ -90,11 +90,11 @@ public sealed class QueueLoadManager:IRelease
 
         foreach (var item in list)
         {
-            if (!Global.It.LocalResMgr.GetLocalResource(item.script, item.path, item.name, item.instance,item.type, out t_obj))
-            {
-                m_queue.Add(item.path, item);
-                Global.It.LocalResMgr.GetLocalResource(item.script, item.path, item.name, t_progress, OnComplete, item.type, item.order, item.instance, item.args);
-            }
+            //if (!Global.It.LocalResMgr.GetLocalResource(item.script, item.path, item.name, item.instance,item.type, out t_obj))
+            //{
+            //    m_queue.Add(item.path, item);
+            //    Global.It.LocalResMgr.GetLocalResource(item.script, item.path, item.name, t_progress, OnComplete, item.type, item.order, item.instance, item.args);
+            //}
         }
 
         m_totalProgress = m_queue.Count;

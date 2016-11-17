@@ -59,11 +59,11 @@ public sealed class SfxManager
     /// <param name="id"></param>
     public void PreloadResource(int id)
     {
-        SfxConfig t_config = ConfigManager.Instance.GetConfigByID<SfxConfig>(id);
-        Global.It.LocalResMgr.GetLocalResource(this, t_config.path + GlobalConfig.BUNDLE_EXT_NAME, t_config.name, null, PreloadResourceReadyCallback, ResourceType.audio, Order.o_default, false);
+        //SfxConfig t_config = ConfigManager.Instance.GetConfigByID<SfxConfig>(id);
+        //Global.It.LocalResMgr.GetLocalResource(this, t_config.path + GlobalConfig.BUNDLE_EXT_NAME, t_config.name, null, PreloadResourceReadyCallback, ResourceType.audio, Order.o_default, false);
 
-        if (!m_preloadResource.Contains(t_config.path))
-            m_preloadResource.Add(t_config.path);
+        //if (!m_preloadResource.Contains(t_config.path))
+        //    m_preloadResource.Add(t_config.path);
     }
 
     private void PreloadResourceReadyCallback(string path, string name, UnityEngine.Object obj, params string[] arg)
@@ -111,53 +111,53 @@ public sealed class SfxManager
     /// <param name="volume"></param>
     public void PlaySoundAt(int id, GameObject obj, bool loop = false,bool over=true,float delay = 0f, float duration = 0f, float volume = 1f)
     {
-        AudioSource t_source = obj.GetComponent<AudioSource>();
+        //AudioSource t_source = obj.GetComponent<AudioSource>();
 
-        if (t_source == null)
-            return;
+        //if (t_source == null)
+        //    return;
 
-        if (t_source.isPlaying && !over)
-            return;
+        //if (t_source.isPlaying && !over)
+        //    return;
 
-        SfxConfig t_config = ConfigManager.Instance.GetConfigByID<SfxConfig>(id);
+        //SfxConfig t_config = ConfigManager.Instance.GetConfigByID<SfxConfig>(id);
 
-        if (t_config == null)
-            return;
+        //if (t_config == null)
+        //    return;
 
-        RequestInfo t_target;
+        //RequestInfo t_target;
 
-        //如果obj已经存在另一个id的音乐请求，并且另一个请求正在加载中，则中断该加载
-        if (m_requestQueue.TryGetValue(t_config.path, out t_target))
-        {
-            if (t_target.id != id)
-                m_requestQueue.Remove(t_config.path);
-        }
+        ////如果obj已经存在另一个id的音乐请求，并且另一个请求正在加载中，则中断该加载
+        //if (m_requestQueue.TryGetValue(t_config.path, out t_target))
+        //{
+        //    if (t_target.id != id)
+        //        m_requestQueue.Remove(t_config.path);
+        //}
 
-        UnityEngine.Object t_obj = null;
+        //UnityEngine.Object t_obj = null;
 
-        if (Global.It.LocalResMgr.GetLocalResource(this, t_config.path + GlobalConfig.BUNDLE_EXT_NAME, t_config.name, false,ResourceType.audio, out t_obj))
-        {
-            t_source.clip = t_obj as AudioClip;
-            t_source.loop = loop;
-            t_source.volume = volume;
-            t_source.PlayDelayed(delay);
-            m_audios.Add(t_source);
-        }
-        else
-        {
-            if (m_requestQueue.ContainsKey(t_config.path + GlobalConfig.BUNDLE_EXT_NAME))//放置请求过快
-                return;
+        //if (Global.It.LocalResMgr.GetLocalResource(this, t_config.path + GlobalConfig.BUNDLE_EXT_NAME, t_config.name, false,ResourceType.audio, out t_obj))
+        //{
+        //    t_source.clip = t_obj as AudioClip;
+        //    t_source.loop = loop;
+        //    t_source.volume = volume;
+        //    t_source.PlayDelayed(delay);
+        //    m_audios.Add(t_source);
+        //}
+        //else
+        //{
+        //    if (m_requestQueue.ContainsKey(t_config.path + GlobalConfig.BUNDLE_EXT_NAME))//放置请求过快
+        //        return;
 
-            RequestInfo t_request = new RequestInfo();
-            t_request.id = id;
-            t_request.target = obj;
-            t_request.loop = loop;
-            t_request.delay = delay;
-            t_request.duration = duration;
-            t_request.volume = volume;
-            m_requestQueue.Add(t_config.path + GlobalConfig.BUNDLE_EXT_NAME, t_request);
-            Global.It.LocalResMgr.GetLocalResource(this, t_config.path + GlobalConfig.BUNDLE_EXT_NAME, t_config.name, null, ResourceReadyCallback, ResourceType.audio, Order.o_default, false);
-        }
+        //    RequestInfo t_request = new RequestInfo();
+        //    t_request.id = id;
+        //    t_request.target = obj;
+        //    t_request.loop = loop;
+        //    t_request.delay = delay;
+        //    t_request.duration = duration;
+        //    t_request.volume = volume;
+        //    m_requestQueue.Add(t_config.path + GlobalConfig.BUNDLE_EXT_NAME, t_request);
+        //    Global.It.LocalResMgr.GetLocalResource(this, t_config.path + GlobalConfig.BUNDLE_EXT_NAME, t_config.name, null, ResourceReadyCallback, ResourceType.audio, Order.o_default, false);
+        //}
     }
 
     private void ResourceReadyCallback(string path, string name, UnityEngine.Object obj, params string[] arg)
@@ -197,7 +197,7 @@ public sealed class SfxManager
         else
         {
             //说明被下个音乐请求中断了，销毁资源
-            Global.It.LocalResMgr.DiscardUsage(this, path);
+        //    Global.It.LocalResMgr.DiscardUsage(this, path);
         }
     }
 
@@ -225,7 +225,7 @@ public sealed class SfxManager
 
         foreach (var item in m_preloadResource)
         {
-            Global.It.LocalResMgr.DiscardUsage(this, item, null);
+        //    Global.It.LocalResMgr.DiscardUsage(this, item, null);
         }
 
         m_preloadResource.Clear();

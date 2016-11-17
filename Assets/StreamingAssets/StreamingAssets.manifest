@@ -1,0 +1,13 @@
+ManifestFileVersion: 0
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: m1
+      Dependencies: {}
+    Info_1:
+      Name: bdd0da4ebd6e87049a09ed60ba010295
+      Dependencies: {}
+    Info_2:
+      Name: 746b52ced8aa89e4eb0afa3f12c274b0
+      Dependencies:
+        Dependency_0: bdd0da4ebd6e87049a09ed60ba010295

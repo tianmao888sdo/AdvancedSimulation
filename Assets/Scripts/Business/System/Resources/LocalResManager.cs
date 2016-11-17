@@ -341,7 +341,7 @@ public sealed class LocalResManager : MonoBehaviour,IRelease
                         if(t_loader.HasWWWError)
                         {
                             //   Debug.LogError(t_loader.SrcPath + ":loaded error");
-                            MDebug.Log(t_loader.SrcPath + ":loaded error");
+                         //   MDebug.Log(t_loader.SrcPath + ":loaded error");
                             t_loader.Release(true);
                             CollectionUtil.SwapDestroyObject<ResLoader>(t_downloadList,i, t_loaderListCount - t_toDeleteCount - 1);//把错误的loader都移动到尾部
                             ++t_toDeleteCount;
@@ -370,7 +370,7 @@ public sealed class LocalResManager : MonoBehaviour,IRelease
 
                 if (t_loader.IsComplete)
                 {
-                    MDebug.Log(t_info.ResPath + " is loaded");
+                //    MDebug.Log(t_info.ResPath + " is loaded");
                     ProcessLoaded(t_info, t_loader, t_downloadList,i,ref t_toDeleteCount);
                     continue;
                 }
@@ -414,7 +414,7 @@ public sealed class LocalResManager : MonoBehaviour,IRelease
         }
         catch (System.Exception e)
         {
-            MDebug.Log(loaded.SrcName + e.StackTrace.ToString()+"error");
+        //    MDebug.Log(loaded.SrcName + e.StackTrace.ToString()+"error");
             loaded.Release(true);
             CollectionUtil.SwapDestroyObject<ResLoader>(loadingList, loadedIndex, t_realCount - deleteCount - 1);//先移动到deleteCount之前的位置
             ++deleteCount;
@@ -440,7 +440,7 @@ public sealed class LocalResManager : MonoBehaviour,IRelease
                     loadingList[i].Release(true);
                     CollectionUtil.SwapDestroyObject<ResLoader>(loadingList, i, t_realCount - deleteCount - 1);
                     ++deleteCount;
-                    MDebug.Log(loaded.SrcName + e.StackTrace.ToString() + "error");
+            //        MDebug.Log(loaded.SrcName + e.StackTrace.ToString() + "error");
                     return true;
                 }
 
@@ -483,7 +483,7 @@ public sealed class LocalResManager : MonoBehaviour,IRelease
             case ResourceType.table:
                 {
                     if (loaded.HasScript && !loaded.ScriptObject.Equals(null))
-                        ResCallBackReady(loaded.SrcPath, loaded.SrcName, loaded.CompleteCallback, resInfo.assetBundle.Load(loaded.SrcName,ResLoader.GetSystemType(loaded.SrcType)), loaded.IsInstanate, loaded.CustomData);
+                        ResCallBackReady(loaded.SrcPath, loaded.SrcName, loaded.CompleteCallback, resInfo.assetBundle.LoadAsset(loaded.SrcName,ResLoader.GetSystemType(loaded.SrcType)), loaded.IsInstanate, loaded.CustomData);
                 }
                 break;
             default://脚本也需要缓存

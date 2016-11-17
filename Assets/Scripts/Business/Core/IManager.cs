@@ -3,5 +3,5 @@ public interface IManager
 {
     void ParseConfig<T>(List<string[]> lines);
 
-    T GetConfigByID<T>(int id) where T : AbsConfig;
+//    T GetConfigByID<T>(int id) where T : AbsConfig;
 }

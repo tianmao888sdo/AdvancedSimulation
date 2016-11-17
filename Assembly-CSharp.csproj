@@ -45,6 +45,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+     <Compile Include="Assets\Reources\test.cs" />
      <Compile Include="Assets\Scripts\Business\Core\CarStatus.cs" />
      <Compile Include="Assets\Scripts\Business\Core\Global.cs" />
      <Compile Include="Assets\Scripts\Business\Core\IManager.cs" />
@@ -63,6 +64,12 @@
      <Compile Include="Assets\Scripts\Business\System\Sfx\SfxManager.cs" />
      <Compile Include="Assets\Scripts\Business\System\Vfx\VfxManager.cs" />
      <Compile Include="Assets\Scripts\Com\ChangeTrace.cs" />
+     <Compile Include="Assets\Scripts\Com\CollectionUtil.cs" />
+     <Compile Include="Assets\Scripts\Com\MemUtil.cs" />
+     <Compile Include="Assets\Scripts\Com\ObjectUtil.cs" />
+     <Compile Include="Assets\Scripts\Com\ResUtil.cs" />
+     <Compile Include="Assets\Scripts\Com\ScriptUtil.cs" />
+     <Compile Include="Assets\Scripts\Com\TimeFormatUtil.cs" />
  <Reference Include="UnityEngine.UI">
  <HintPath>D:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>

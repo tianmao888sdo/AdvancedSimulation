@@ -62,14 +62,24 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Reources\test.cs" />
     <Compile Include="Assets\Scripts\Business\Core\CarStatus.cs" />
     <Compile Include="Assets\Scripts\Business\Core\Global.cs" />
     <Compile Include="Assets\Scripts\Business\Core\IManager.cs" />
     <Compile Include="Assets\Scripts\Business\Core\IRelease.cs" />
     <Compile Include="Assets\Scripts\Business\Core\IUpdate.cs" />
+    <Compile Include="Assets\Scripts\Business\Core\ScriptBase.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Camera\AbstractTargetFollower.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Camera\AutoCam.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Camera\FreeLookCam.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Camera\HandHeldCam.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Camera\LookatTarget.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Camera\PivotBasedCameraRig.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Camera\ProtectCameraFromWallClip.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Camera\TargetFieldOfView.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\CarAttributes.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\CarControlCenter.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Car\Engine.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Car\Wheel.cs" />
     <Compile Include="Assets\Scripts\Business\System\Input\KeyInputManager.cs" />
     <Compile Include="Assets\Scripts\Business\System\Input\SignalInputManager.cs" />
     <Compile Include="Assets\Scripts\Business\System\Pool\PoolManager.cs" />

@@ -8,6 +8,12 @@ public class CarStatus : MonoBehaviour {
 
 
 
+    private void FixedUpdate()
+    {
+
+    }
+
+
     public void Init()
     {
     }

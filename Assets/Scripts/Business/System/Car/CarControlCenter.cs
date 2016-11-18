@@ -4,20 +4,28 @@ using System.Collections;
 /// <summary>
 /// 车辆控制中心，所有对车的操作，全部集中到这里
 /// </summary>
-public class CarControlCenter : MonoBehaviour
+public class CarControlCenter : ScriptBase
 {
     public CarAttributes carAttributes;
+    public Engine engine;
+    [SerializeField]
+    private WheelCollider[] m_WheelColliders = new WheelCollider[4];
+    [SerializeField]
+    private GameObject[] m_WheelMeshes = new GameObject[4];
 
-	// Use this for initialization
-	void Awake () {
-	
-	}
+    protected override void BFixedUpdate()
+    {
+        this.Move(carAttributes.steering, carAttributes.accelerator, carAttributes.brake);
+    }
 
     public void Init()
     {
-        KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Horizontal", (number) => { carAttributes.steeringWheelAngle = Mathf.Clamp(number, -1f, 1f); });
+        KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Horizontal", (number) =>
+        {
+            carAttributes.steering = Mathf.Clamp(number, -1f, 1f);
+        });
         KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Vertical", (number) => { carAttributes.accelerator = Mathf.Clamp(number, 0, 1); });
-        KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Jump", (number) => { carAttributes.handbrake = Mathf.Clamp(number, 0, 1); });
+        KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Jump", (number) => { carAttributes.brake = Mathf.Clamp(number, 0, 1); });
 
         KeyInputManager.Instance.AddKeyboardDelegate(KeyInputManager.InputMode.CarControl, KeyCode.C, OnKeyC);
         KeyInputManager.Instance.AddKeyboardDelegate(KeyInputManager.InputMode.CarControl, KeyCode.P, OnKeyP);
@@ -30,13 +38,35 @@ public class CarControlCenter : MonoBehaviour
         KeyInputManager.Instance.AddKeyboardDelegate(KeyInputManager.InputMode.CarControl, KeyCode.O, OnKeyO);
         KeyInputManager.Instance.AddKeyboardDelegate(KeyInputManager.InputMode.CarControl, KeyCode.B, OnKeyB);
         KeyInputManager.Instance.AddKeyboardDelegate(KeyInputManager.InputMode.CarControl, KeyCode.Alpha0, OnKeyAlpha0);
-    }
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
 
+        KeyInputManager.Instance.Init();
+        KeyInputManager.Instance.SetInputMode(KeyInputManager.InputMode.CarControl);
+        KeyInputManager.Instance.pause = false;
+    }
+
+    public void Move(float steering, float accel, float footbrake)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            Quaternion quat;
+            Vector3 position;
+            m_WheelColliders[i].GetWorldPose(out position, out quat);
+            //m_WheelMeshes[i].transform.position = position;
+            //m_WheelMeshes[i].transform.rotation = quat;
+        }
+
+        carAttributes.currSteerAngle = steering * carAttributes.maxSteerAngle;
+        m_WheelColliders[0].steerAngle = carAttributes.currSteerAngle;
+        m_WheelColliders[1].steerAngle = carAttributes.currSteerAngle;
+
+        float thrustTorque = accel*engine.maxMotorTorque / 4f;
+
+        for (int i = 0; i < 4; i++)
+        {
+            m_WheelColliders[i].motorTorque = thrustTorque;
+            m_WheelColliders[i].brakeTorque = footbrake * m_WheelColliders[i].GetComponent<Wheel>().maxBrake;
+        }
+    }
 
     /// <summary>
     /// 切换相机

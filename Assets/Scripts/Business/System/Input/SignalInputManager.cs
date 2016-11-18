@@ -4,9 +4,9 @@ using System.Collections;
 using System;
 
 /// <summary>
-/// 信号输入管理器，数值监控，只跟车有关系
+/// 信号输入管理器，数值监控，尺必须先加载完成才能初始化
 /// </summary>
-public class SignalInputManager : MonoBehaviour
+public class SignalInputManager : ScriptBase
 {
     #region 单例
     private static SignalInputManager instance;
@@ -327,12 +327,20 @@ public class SignalInputManager : MonoBehaviour
         ctDown = new ChangeTrace(iDown, 1f);
         ctRight = new ChangeTrace(iRight, 1f);
         ctLeft = new ChangeTrace(iLeft, 1f);
-        ctBrake = new ChangeTrace(carAttributes.brake, 0.1f);
-        ctCamera = new ChangeTrace(iCamera, 1f);
+
+        try
+        {
+            ctBrake = new ChangeTrace(carAttributes.brake, 0.1f);
+            ctCamera = new ChangeTrace(iCamera, 1f);
+        }
+        catch(Exception e)
+        {
+            Debug.Log(e.Message);
+        }
     }
 
 	// Update is called once per frame
-	void Update () {
+	protected override void BUpdate () {
         ValTrace();
 	}
 

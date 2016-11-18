@@ -6,7 +6,7 @@ using System.Collections.Generic;
 /// <summary>
 /// 键盘事件管理器
 /// </summary>
-public class KeyInputManager : MonoBehaviour 
+public class KeyInputManager : ScriptBase
 {
     #region 单例
     private static KeyInputManager instance;
@@ -46,9 +46,15 @@ public class KeyInputManager : MonoBehaviour
 	void Awake () {
         instance = this;
 	}
+
+    public void Init()
+    {
+        m_dicKeyboard.Add(InputMode.Global, new Dictionary<KeyCode, Action>());
+        m_dicAxis.Add(InputMode.Global, new Dictionary<string, AxisDelegate>());
+    }
 	
 	// Update is called once per frame
-	void Update () {
+	protected override void BUpdate () {
         UpdateKeyboardDelegates(InputMode.Global);
         UpdateKeyboardDelegates(m_currInputMode);
         UpdateAxisDelegates(InputMode.Global);

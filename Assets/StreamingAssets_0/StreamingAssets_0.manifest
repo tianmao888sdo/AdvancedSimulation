@@ -1,0 +1,14 @@
+ManifestFileVersion: 0
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: assets/reources/newunlitshader.shader.0
+      Dependencies: {}
+    Info_1:
+      Name: assets/reources/m2.mat.0
+      Dependencies:
+        Dependency_0: assets/reources/newunlitshader.shader.0
+    Info_2:
+      Name: assets/reources/cube.prefab.0
+      Dependencies:
+        Dependency_0: assets/reources/m2.mat.0

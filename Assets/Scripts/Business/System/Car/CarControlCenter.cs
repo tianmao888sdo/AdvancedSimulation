@@ -5,20 +5,51 @@ using System;
 /// <summary>
 /// 车辆控制中心，所有对车的操作，全部集中到这里
 /// </summary>
-public class CarControlCenter :MonoBehaviour,IUpdate,IRelease
+public class CarControlCenter : ScriptBase, IUpdate,IRelease
 {
-    public CarAttributes carAttributes;
-    public EngineSystem engineSystem;
-    public SteeringSystem steeringSystem;
-    public ClutchSystem clutchSystem;
-    public GearBoxSystem gearBoxSystem;
-    public GearReducerSystem gearReducerSystem;
-    public BrakeSystem brakeSystem;
+    /// <summary>
+    /// 属性
+    /// </summary>
+    [SerializeField]
+    private CarAttributes carAttributes;
+    /// <summary>
+    /// 发动机
+    /// </summary>
+    [SerializeField]
+    private EngineSystem engineSystem;
+    /// <summary>
+    /// 转向系统
+    /// </summary>
+    [SerializeField]
+    private SteeringSystem steeringSystem;
+    /// <summary>
+    /// 离合器
+    /// </summary>
+    [SerializeField]
+    private ClutchSystem clutchSystem;
+    /// <summary>
+    /// 变速箱
+    /// </summary>
+    [SerializeField]
+    private GearBoxSystem gearBoxSystem;
+    /// <summary>
+    /// 减速器
+    /// </summary>
+    [SerializeField]
+    private GearReducerSystem gearReducerSystem;
+    /// <summary>
+    /// 刹车系统
+    /// </summary>
+    [SerializeField]
+    private BrakeSystem brakeSystem;
 
+    /// <summary>
+    /// 轮胎
+    /// </summary>
     [SerializeField]
     private Wheel[] m_Wheels = new Wheel[4];
 
-    public void Init()
+    public override void Init()
     {
         KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Horizontal", (number) =>{carAttributes.steering = Mathf.Clamp(number, -1f, 1f);});
         KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Vertical", (number) => { carAttributes.accelerator = Mathf.Clamp(number, 0, 1); });
@@ -42,34 +73,40 @@ public class CarControlCenter :MonoBehaviour,IUpdate,IRelease
         SignalInputManager.Instance.carAttributes = carAttributes;
         SignalInputManager.Instance.Init();
 
-        gearBoxSystem.gear = 1;
+        //全部子部件初始化
+        engineSystem.Init();
+        gearBoxSystem.Init();
+        clutchSystem.Init();
+        steeringSystem.Init();
+        brakeSystem.Init();
+    }
+
+    public override void Play()
+    {
+        GameManager.Instance.AddUpdater(this);
+    }
+
+    public override void Stop()
+    {
+        GameManager.Instance.RemoveUpdater(this);
     }
 
     public void Update()
     {
         engineSystem.SetThrottleInput(carAttributes.accelerator);
-        steeringSystem .SetSteeringInput(carAttributes.steering);
+        gearBoxSystem.SetGear(1);
+        gearBoxSystem.SetRPM(engineSystem.RPM);
+        steeringSystem.SetSteeringInput(carAttributes.steering);
         brakeSystem.SetBrakeInput(carAttributes.brake);
         clutchSystem.SetClutchInput(0);
 
-        float thrustTorque = gearBoxSystem.GetNewRPM(engineSystem.rpm) / 4f;
+        float thrustTorque = gearBoxSystem.OutputRPM * (1- clutchSystem.Clutch) / 4f;
 
         for (int i = 0; i < 4; i++)
         {
-            m_Wheels[i].wheelCollider.motorTorque = thrustTorque;
-            Debug.Log(thrustTorque);
-            m_Wheels[i].wheelCollider.brakeTorque = brakeSystem.GetBrakeTorque();
+            m_Wheels[i].SetMotorTorque(thrustTorque);
+            m_Wheels[i].SetBrakeTorque(brakeSystem.BrakeTorque);
         }
-    }
-
-    public void Play()
-    {
-        GameManager.Instance.AddUpdater(this);
-    }
-
-    public void Stop()
-    {
-        GameManager.Instance.RemoveUpdater(this);
     }
 
     /// <summary>

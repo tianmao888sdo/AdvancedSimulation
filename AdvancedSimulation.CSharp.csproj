@@ -83,6 +83,7 @@
     <Compile Include="Assets\Scripts\Business\System\Car\EngineSystem.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\GearBoxSystem.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\GearReducerSystem.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Car\ScriptBase.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\SteeringSystem.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\Wheel.cs" />
     <Compile Include="Assets\Scripts\Business\System\Input\KeyInputManager.cs" />

@@ -1,10 +1,33 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
-public class GearReducerSystem : MonoBehaviour {
+/// <summary>
+/// 减速器
+/// </summary>
+public class GearReducerSystem : ScriptBase,IRelease {
+    public override void Init()
+    {
+        throw new NotImplementedException();
+    }
 
-	// Use this for initialization
-	void Start () {
+    public override void Play()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Release(bool destroy = false)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void Stop()
+    {
+        throw new NotImplementedException();
+    }
+
+    // Use this for initialization
+    void Start () {
 	
 	}
 	

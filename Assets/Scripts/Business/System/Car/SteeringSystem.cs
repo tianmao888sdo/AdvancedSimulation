@@ -1,19 +1,44 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
 /// <summary>
 /// 负责根据方向盘的输入改变轮胎转向，要求有前束角
 /// </summary>
-public class SteeringSystem : MonoBehaviour {
-
+public class SteeringSystem : ScriptBase,IRelease
+{
     [SerializeField]
-    private WheelCollider[] m_WheelColliders = new WheelCollider[2];
+    private Wheel[] wheels = new Wheel[2];
 
-    public float maxSteerAngle = 30f;
-    public float currSteerAngle = 0f;
-    public float steeringInput = 0f;
+    /// <summary>
+    /// 最大转向角度
+    /// </summary>
+    [SerializeField]
+    private float maxSteerAngle = 30f;
+
+    /// <summary>
+    /// 当前转向角度
+    /// </summary>
+    [SerializeField]
+    private float currSteerAngle = 0f;
 
     private float m_steeringInput = 0f;
+
+    public override void Init()
+    {
+        //获取2个轮胎
+    }
+
+    public override void Play()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void Stop()
+    {
+        throw new NotImplementedException();
+    }
+
     /// <summary>
     /// 外部转向输入
     /// </summary>
@@ -21,7 +46,14 @@ public class SteeringSystem : MonoBehaviour {
     {
         m_steeringInput = val;
         currSteerAngle = m_steeringInput * maxSteerAngle;
-        m_WheelColliders[0].steerAngle = currSteerAngle;
-        m_WheelColliders[1].steerAngle = currSteerAngle;
+
+        //计算前束角
+        wheels[0].SetSteerAngle(currSteerAngle);
+        wheels[1].SetSteerAngle(currSteerAngle);
+    }
+
+    public void Release(bool destroy = false)
+    {
+        throw new NotImplementedException();
     }
 }

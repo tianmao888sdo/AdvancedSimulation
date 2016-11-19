@@ -6,7 +6,7 @@ using System;
 /// <summary>
 /// 信号输入管理器，数值监控，尺必须先加载完成才能初始化
 /// </summary>
-public class SignalInputManager : ScriptBase
+public class SignalInputManager :MonoBehaviour,IUpdate, IRelease
 {
     #region 单例
     private static SignalInputManager instance;
@@ -246,7 +246,6 @@ public class SignalInputManager : ScriptBase
     {
         instance = this;
     }
-
     public void Init()
     {
         //添加空方法，防止空对象错误
@@ -339,10 +338,20 @@ public class SignalInputManager : ScriptBase
         }
     }
 
-	// Update is called once per frame
-	protected override void BUpdate () {
+    public void Update()
+    {
         ValTrace();
-	}
+    }
+
+    public void Play()
+    {
+        GameManager.Instance.AddUpdater(this);
+    }
+
+    public void Stop()
+    {
+        GameManager.Instance.RemoveUpdater(this);
+    }
 
     /// <summary>
     /// 值域追踪的公用代码段
@@ -374,5 +383,10 @@ public class SignalInputManager : ScriptBase
         if (ctLeft.IsChange(iLeft)) { m_dicSignal[SignalInputEnum.Left](iLeft); }
         if (ctBrake.IsChange(carAttributes.brake)) { m_dicSignal[SignalInputEnum.Brake]((int)(carAttributes.brake * 100)); }
         if (ctCamera.IsChange(iCamera)){m_dicSignal[SignalInputEnum.Camera](iCamera); }
+    }
+
+    public void Release(bool destroy = false)
+    {
+        throw new NotImplementedException();
     }
 }

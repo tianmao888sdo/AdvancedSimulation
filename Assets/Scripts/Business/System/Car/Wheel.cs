@@ -3,16 +3,17 @@ using System.Collections;
 
 public class Wheel : MonoBehaviour
 {
+    public WheelCollider wheelCollider;
+    public GameObject wheelMesh;
     public float maxBrake = 0f;
 
-
-	// Use this for initialization
-	void Start () {
-	
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
+    // Update is called once per frame
+    public void UpdateWheels()
+    {
+        Quaternion quat;
+        Vector3 position;
+        wheelCollider.GetWorldPose(out position, out quat);
+        //wheelCollider.transform.position = position;
+        //wheelCollider.transform.rotation = quat;
+    }
 }

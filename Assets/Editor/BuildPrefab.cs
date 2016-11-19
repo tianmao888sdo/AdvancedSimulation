@@ -1,4 +1,5 @@
 ﻿using UnityEditor;
+using UnityEngine;
 using System.IO;
 
 /// <summary>
@@ -13,7 +14,7 @@ public class BuildPrefab : BuildAssetsBase
     [MenuItem("BuildAsset/BuildSelectedPrefab")]
     private static void BuildSelectedPrefab()
     {
-        BuildPrefab.BuildSelectedDir(new BuildPrefab());
+        BuildPrefab.BuildSelectedDir(CreateInstance<BuildPrefab>());
     }
 
     /// <summary>
@@ -22,7 +23,7 @@ public class BuildPrefab : BuildAssetsBase
     [MenuItem("BuildAsset/BuildAllPrefab")]
     private static void BuildAllPrefab()
     {
-        BuildPrefab.BuildAll(new BuildPrefab());
+        BuildPrefab.BuildAll(CreateInstance<BuildPrefab>());
     }
 
     /// <summary>
@@ -43,10 +44,13 @@ public class BuildPrefab : BuildAssetsBase
 
                 for (int i = 0; i < dps.Length; i++)
                 {
+                    if (Path.GetExtension(dps[i]) == ".cs")
+                        continue;
+
                     //通过资源路径来获取需要打包的资源
                     AssetImporter ai = AssetImporter.GetAtPath(dps[i]);
                     //ai.assetBundleName = AssetDatabase.AssetPathToGUID(dps[i]) + Path.GetExtension(dps[i]);
-                    ai.assetBundleName =new FileInfo(dps[i]).Name;
+                    ai.assetBundleName = new FileInfo(dps[i]).Name;
                 }
 
                 return true;

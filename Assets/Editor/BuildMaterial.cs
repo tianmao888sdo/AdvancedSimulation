@@ -13,7 +13,7 @@ public class BuildMaterial : BuildAssetsBase
     [MenuItem("BuildAsset/BuildSelectedMaterial")]
     private static void BuildSelectedMaterial()
     {
-        BuildMaterial.BuildSelectedDir(new BuildMaterial());
+        BuildMaterial.BuildSelectedDir(CreateInstance<BuildMaterial>());
     }
 
     /// <summary>
@@ -22,7 +22,7 @@ public class BuildMaterial : BuildAssetsBase
     [MenuItem("BuildAsset/BuildAllMaterial")]
     private static void BuildAllMaterial()
     {
-        BuildMaterial.BuildAll(new BuildMaterial());
+        BuildMaterial.BuildAll(CreateInstance<BuildMaterial>());
     }
 
     /// <summary>
@@ -43,6 +43,9 @@ public class BuildMaterial : BuildAssetsBase
 
                 for (int i = 0; i < dps.Length; i++)
                 {
+                    if (Path.GetExtension(dps[i]) == ".cs")
+                        continue;
+
                     //通过资源路径来获取需要打包的资源
                     AssetImporter ai = AssetImporter.GetAtPath(dps[i]);
                     //ai.assetBundleName = AssetDatabase.AssetPathToGUID(dps[i]) + Path.GetExtension(dps[i]);

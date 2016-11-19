@@ -1,29 +1,26 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
 /// <summary>
 /// 车辆控制中心，所有对车的操作，全部集中到这里
 /// </summary>
-public class CarControlCenter : ScriptBase
+public class CarControlCenter :MonoBehaviour,IUpdate,IRelease
 {
     public CarAttributes carAttributes;
-    public Engine engine;
-    [SerializeField]
-    private WheelCollider[] m_WheelColliders = new WheelCollider[4];
-    [SerializeField]
-    private GameObject[] m_WheelMeshes = new GameObject[4];
+    public EngineSystem engineSystem;
+    public SteeringSystem steeringSystem;
+    public ClutchSystem clutchSystem;
+    public GearBoxSystem gearBoxSystem;
+    public GearReducerSystem gearReducerSystem;
+    public BrakeSystem brakeSystem;
 
-    protected override void BFixedUpdate()
-    {
-        this.Move(carAttributes.steering, carAttributes.accelerator, carAttributes.brake);
-    }
+    [SerializeField]
+    private Wheel[] m_Wheels = new Wheel[4];
 
     public void Init()
     {
-        KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Horizontal", (number) =>
-        {
-            carAttributes.steering = Mathf.Clamp(number, -1f, 1f);
-        });
+        KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Horizontal", (number) =>{carAttributes.steering = Mathf.Clamp(number, -1f, 1f);});
         KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Vertical", (number) => { carAttributes.accelerator = Mathf.Clamp(number, 0, 1); });
         KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Jump", (number) => { carAttributes.brake = Mathf.Clamp(number, 0, 1); });
 
@@ -41,31 +38,38 @@ public class CarControlCenter : ScriptBase
 
         KeyInputManager.Instance.Init();
         KeyInputManager.Instance.SetInputMode(KeyInputManager.InputMode.CarControl);
-        KeyInputManager.Instance.pause = false;
+
+        SignalInputManager.Instance.carAttributes = carAttributes;
+        SignalInputManager.Instance.Init();
+
+        gearBoxSystem.gear = 1;
     }
 
-    public void Move(float steering, float accel, float footbrake)
+    public void Update()
     {
-        for (int i = 0; i < 4; i++)
-        {
-            Quaternion quat;
-            Vector3 position;
-            m_WheelColliders[i].GetWorldPose(out position, out quat);
-            //m_WheelMeshes[i].transform.position = position;
-            //m_WheelMeshes[i].transform.rotation = quat;
-        }
+        engineSystem.SetThrottleInput(carAttributes.accelerator);
+        steeringSystem .SetSteeringInput(carAttributes.steering);
+        brakeSystem.SetBrakeInput(carAttributes.brake);
+        clutchSystem.SetClutchInput(0);
 
-        carAttributes.currSteerAngle = steering * carAttributes.maxSteerAngle;
-        m_WheelColliders[0].steerAngle = carAttributes.currSteerAngle;
-        m_WheelColliders[1].steerAngle = carAttributes.currSteerAngle;
-
-        float thrustTorque = accel*engine.maxMotorTorque / 4f;
+        float thrustTorque = gearBoxSystem.GetNewRPM(engineSystem.rpm) / 4f;
 
         for (int i = 0; i < 4; i++)
         {
-            m_WheelColliders[i].motorTorque = thrustTorque;
-            m_WheelColliders[i].brakeTorque = footbrake * m_WheelColliders[i].GetComponent<Wheel>().maxBrake;
+            m_Wheels[i].wheelCollider.motorTorque = thrustTorque;
+            Debug.Log(thrustTorque);
+            m_Wheels[i].wheelCollider.brakeTorque = brakeSystem.GetBrakeTorque();
         }
+    }
+
+    public void Play()
+    {
+        GameManager.Instance.AddUpdater(this);
+    }
+
+    public void Stop()
+    {
+        GameManager.Instance.RemoveUpdater(this);
     }
 
     /// <summary>
@@ -154,5 +158,10 @@ public class CarControlCenter : ScriptBase
     private void OnKeyAlpha0()
     {
 
+    }
+
+    public void Release(bool destroy = false)
+    {
+        throw new NotImplementedException();
     }
 }

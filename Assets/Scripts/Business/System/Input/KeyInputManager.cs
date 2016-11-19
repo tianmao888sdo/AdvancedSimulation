@@ -6,7 +6,7 @@ using System.Collections.Generic;
 /// <summary>
 /// 键盘事件管理器
 /// </summary>
-public class KeyInputManager : ScriptBase
+public class KeyInputManager :MonoBehaviour,IUpdate,IRelease
 {
     #region 单例
     private static KeyInputManager instance;
@@ -54,12 +54,22 @@ public class KeyInputManager : ScriptBase
     }
 	
 	// Update is called once per frame
-	protected override void BUpdate () {
+	public void Update () {
         UpdateKeyboardDelegates(InputMode.Global);
         UpdateKeyboardDelegates(m_currInputMode);
         UpdateAxisDelegates(InputMode.Global);
         UpdateAxisDelegates(m_currInputMode);
 	}
+
+    public void Play()
+    {
+        GameManager.Instance.AddUpdater(this);
+    }
+
+    public void Stop()
+    {
+        GameManager.Instance.RemoveUpdater(this);
+    }
 
     /// <summary>
     /// 选择键盘输入模式，不能选择全局模式，子模式不会覆盖全局模式
@@ -160,5 +170,10 @@ public class KeyInputManager : ScriptBase
                 item.Value(Input.GetAxis(item.Key));
             }
         }
+    }
+
+    public void Release(bool destroy = false)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -108,7 +108,7 @@ public class BuildAssetsBase : Editor
             }
 
             //打包
-            BuildPipeline.BuildAssetBundles(path, 0, EditorUserBuildSettings.activeBuildTarget);
+            BuildPipeline.BuildAssetBundles(path,BuildAssetBundleOptions.None, EditorUserBuildSettings.activeBuildTarget);
         }
 
         //刷新资源路径,避免生成的文件不显示
@@ -116,7 +116,7 @@ public class BuildAssetsBase : Editor
     }
 
     //清除已经打包的资源 AssetBundleNames
-    [MenuItem("BuildAsset/ClearAsetBundlesName")]
+    [MenuItem("BuildAsset/ClearAssetBundlesName")]
     private static void ClearAssetBundlesName()
     {
         int length = AssetDatabase.GetAllAssetBundleNames().Length;

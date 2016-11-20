@@ -3,9 +3,9 @@ using System.Collections;
 using System;
 
 /// <summary>
-/// 轮胎
+/// 轮胎,负责，驱动轮胎转动，刹车和转向
 /// </summary>
-public class Wheel : ScriptBase,IRelease
+public class Wheel : ScriptBase, IWheel, IRelease
 {
     [SerializeField]
     private WheelCollider wheelCollider;

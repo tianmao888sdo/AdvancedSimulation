@@ -79,10 +79,15 @@
     <Compile Include="Assets\Scripts\Business\System\Car\BrakeSystem.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\CarAttributes.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\CarControlCenter.cs" />
-    <Compile Include="Assets\Scripts\Business\System\Car\ClutchSystem.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\EngineSystem.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\GearBoxSystem.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\GearReducerSystem.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Car\Interface\IBrake.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Car\Interface\IEngine.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Car\Interface\IGearBox.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Car\Interface\IGearReducer.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Car\Interface\ISteering.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Car\Interface\IWheel.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\ScriptBase.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\SteeringSystem.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\Wheel.cs" />

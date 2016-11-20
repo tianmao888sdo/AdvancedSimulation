@@ -11,8 +11,17 @@ public class BrakeSystem : ScriptBase,IRelease {
     /// 最大刹车力矩
     /// </summary>
     [SerializeField]
-    private float maxBrakeTorque = 1000f;
+    private float maxBrakeTorque = 140f;
 
+    /// <summary>
+    /// 机械效率
+    /// </summary>
+    [SerializeField]
+    private float mechanicalEfficiency = 1f;
+
+    /// <summary>
+    /// 刹车输入
+    /// </summary>
     private float m_brakeInput = 0f;
 
     /// <summary>
@@ -22,7 +31,7 @@ public class BrakeSystem : ScriptBase,IRelease {
 
     public override void Init()
     {
-        throw new NotImplementedException();
+
     }
 
     public override void Play()

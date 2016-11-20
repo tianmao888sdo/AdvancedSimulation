@@ -5,7 +5,7 @@ using System;
 /// <summary>
 /// 负责根据方向盘的输入改变轮胎转向，要求有前束角
 /// </summary>
-public class SteeringSystem : ScriptBase,IRelease
+public class SteeringSystem : ScriptBase, ISteering,IRelease
 {
     [SerializeField]
     private Wheel[] wheels = new Wheel[2];
@@ -27,6 +27,7 @@ public class SteeringSystem : ScriptBase,IRelease
     public override void Init()
     {
         //获取2个轮胎
+        //读取配置文件获得参数
     }
 
     public override void Play()

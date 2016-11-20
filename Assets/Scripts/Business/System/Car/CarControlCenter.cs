@@ -22,21 +22,19 @@ public class CarControlCenter : ScriptBase, IUpdate,IRelease
     /// </summary>
     [SerializeField]
     private SteeringSystem steeringSystem;
-    /// <summary>
-    /// 离合器
-    /// </summary>
-    [SerializeField]
-    private ClutchSystem clutchSystem;
+
     /// <summary>
     /// 变速箱
     /// </summary>
     [SerializeField]
     private GearBoxSystem gearBoxSystem;
+
     /// <summary>
     /// 减速器
     /// </summary>
     [SerializeField]
     private GearReducerSystem gearReducerSystem;
+
     /// <summary>
     /// 刹车系统
     /// </summary>
@@ -76,7 +74,6 @@ public class CarControlCenter : ScriptBase, IUpdate,IRelease
         //全部子部件初始化
         engineSystem.Init();
         gearBoxSystem.Init();
-        clutchSystem.Init();
         steeringSystem.Init();
         brakeSystem.Init();
     }
@@ -95,17 +92,55 @@ public class CarControlCenter : ScriptBase, IUpdate,IRelease
     {
         engineSystem.SetThrottleInput(carAttributes.accelerator);
         gearBoxSystem.SetGear(1);
-        gearBoxSystem.SetRPM(engineSystem.RPM);
+        gearBoxSystem.SetTorque(engineSystem.Torque);
+        gearBoxSystem.SetClutch(0);
         steeringSystem.SetSteeringInput(carAttributes.steering);
         brakeSystem.SetBrakeInput(carAttributes.brake);
-        clutchSystem.SetClutchInput(0);
+        Move(gearBoxSystem.OutputTorque, brakeSystem.BrakeTorque);
+    }
 
-        float thrustTorque = gearBoxSystem.OutputRPM * (1- clutchSystem.Clutch) / 4f;
+    /// <summary>
+    /// 驱动和刹车
+    /// </summary>
+    /// <param name="motorTorque"></param>
+    /// <param name="brakeTorque"></param>
+    private void Move(float motorTorque,float brakeTorque)
+    {
+        float t_motorTorque = 0f;
 
-        for (int i = 0; i < 4; i++)
+        switch (carAttributes.motorMode)
         {
-            m_Wheels[i].SetMotorTorque(thrustTorque);
-            m_Wheels[i].SetBrakeTorque(brakeSystem.BrakeTorque);
+            case CarAttributes.MotorMode.FrontTwoDrive:
+                t_motorTorque = gearBoxSystem.OutputTorque / 2f;
+                m_Wheels[0].SetMotorTorque(t_motorTorque);
+                m_Wheels[1].SetMotorTorque(t_motorTorque);
+                break;
+            case CarAttributes.MotorMode.RearTwoDrive:
+                t_motorTorque = gearBoxSystem.OutputTorque / 2f;
+                m_Wheels[2].SetMotorTorque(t_motorTorque);
+                m_Wheels[3].SetMotorTorque(t_motorTorque);
+                break;
+            case CarAttributes.MotorMode.FourDrive:
+                t_motorTorque = gearBoxSystem.OutputTorque / 4f;
+                m_Wheels[0].SetMotorTorque(t_motorTorque);
+                m_Wheels[1].SetMotorTorque(t_motorTorque);
+                m_Wheels[2].SetMotorTorque(t_motorTorque);
+                m_Wheels[3].SetMotorTorque(t_motorTorque);
+                break;
+        }
+
+        switch (carAttributes.brakeMode)
+        {
+            case CarAttributes.BrakeMode.RearTwoBrake:
+                m_Wheels[2].SetBrakeTorque(brakeSystem.BrakeTorque);
+                m_Wheels[3].SetBrakeTorque(brakeSystem.BrakeTorque);
+                break;
+            case CarAttributes.BrakeMode.FourBrake:
+                m_Wheels[0].SetBrakeTorque(brakeSystem.BrakeTorque);
+                m_Wheels[1].SetBrakeTorque(brakeSystem.BrakeTorque);
+                m_Wheels[2].SetBrakeTorque(brakeSystem.BrakeTorque);
+                m_Wheels[3].SetBrakeTorque(brakeSystem.BrakeTorque);
+                break;
         }
     }
 

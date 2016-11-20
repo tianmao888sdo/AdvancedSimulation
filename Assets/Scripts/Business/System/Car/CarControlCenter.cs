@@ -3,7 +3,7 @@ using System.Collections;
 using System;
 
 /// <summary>
-/// 车辆控制中心，所有对车的操作，全部集中到这里
+/// 车辆控制中心，所有对车的操作，全部集中到这里，最终将操作作用于4个轮子
 /// </summary>
 public class CarControlCenter : ScriptBase, IUpdate,IRelease
 {

@@ -28,6 +28,10 @@ public class CarAttributes : MonoBehaviour
     public float handbrake = 0.0f;//手刹
     public float clutch = 0.0f;//离合   CarControl使用以确定换挡流程
 
+    public float shaftMomentofInertia = 0f;//传动轴惯量
+    public float shaftAngleAcc = 0f;//传动轴角加速度
+
+
     public void Init()
     {
         //读取车辆基本配置文件

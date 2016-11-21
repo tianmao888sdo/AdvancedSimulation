@@ -8,25 +8,53 @@ using System;
 public class GearBoxSystem : ScriptBase, IGearBox,IRelease
 {
     /// <summary>
+    /// 档位
+    /// </summary>
+    public class Gear
+    {
+        /// <summary>
+        /// 传动比
+        /// </summary>
+        public float speedRatio = 0f;
+
+        /// <summary>
+        /// 转动惯量
+        /// </summary>
+        public float momentofInertia = 0f;
+
+        /// <summary>
+        /// 传动效率
+        /// </summary>
+        public float efficiency = 0f;
+
+        public Gear(float speedRatio,float momentofInertia,float efficiency)
+        {
+            this.speedRatio = speedRatio;
+            this.momentofInertia = momentofInertia;
+            this.efficiency = efficiency;
+        }
+    }
+
+    /// <summary>
     /// 齿轮速比
     /// </summary>
     [SerializeField]
-    private float[] speedRatios;
+    private Gear[] gears;
 
     /// <summary>
-    /// 输入齿轮数
+    /// 输入
     /// </summary>
     [SerializeField]
     private int input = 0;
 
     /// <summary>
-    /// 输出齿轮数
+    /// 输出
     /// </summary>
     [SerializeField]
     private int output = 0;
 
     /// <summary>
-    /// 机械效率
+    /// 机械效率，热能，粘滞阻力带来的损失
     /// </summary>
     [SerializeField]
     private float mechanicalEfficiency = 1f;
@@ -59,14 +87,29 @@ public class GearBoxSystem : ScriptBase, IGearBox,IRelease
     {
         get
         {
-            return mechanicalEfficiency*(input / output) * (1- m_clutch) * m_torqueInput * speedRatios[m_gearIndex];
+            return mechanicalEfficiency*(input / output) * (1- m_clutch) * m_torqueInput * gears[m_gearIndex].speedRatio* gears[m_gearIndex].efficiency;
         }
     }
+
+    /// <summary>
+    /// 转动惯量，惯量会带啦扭矩损失
+    /// </summary>
+    //public float MomentofInertia { get { return 0.5f * mass; } }
 
     public override void Init()
     {
         //读取配置文件获得参数
-        speedRatios = new float[]{7.31f,4.31f,2.45f,1.54f,1.0f,7.66f};
+
+        gears = new Gear[]
+        {
+            new Gear(7.31f,1f,0.966f),
+            new Gear(4.31f,1f,0.967f),
+            new Gear(2.45f,1f,0.972f),
+            new Gear(1.54f,1f,0.973f),
+            new Gear(1f,1f,0.975f),
+            new Gear(7.66f,1f,0.95f)
+        };
+
         input = 145;
         output = 145;
     }

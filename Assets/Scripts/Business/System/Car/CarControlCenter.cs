@@ -106,6 +106,8 @@ public class CarControlCenter : ScriptBase, IUpdate,IRelease
     /// <param name="brakeTorque"></param>
     private void Move(float motorTorque,float brakeTorque)
     {
+        Debug.Log(motorTorque+"ssssssssss");
+
         float t_motorTorque = 0f;
 
         switch (carAttributes.motorMode)
@@ -132,6 +134,24 @@ public class CarControlCenter : ScriptBase, IUpdate,IRelease
         switch (carAttributes.brakeMode)
         {
             case CarAttributes.BrakeMode.RearTwoBrake:
+                //if(brakeSystem.BrakeTorque > 0)
+                //{
+                //    m_Wheels2[2].gameObject.SetActive(true);
+                //    m_Wheels2[3].gameObject.SetActive(true);
+                //    m_Wheels2[0].gameObject.SetActive(true);
+                //    m_Wheels2[1].gameObject.SetActive(true);
+                //    m_Wheels2[2].SetBrakeTorque(brakeSystem.BrakeTorque);
+                //    m_Wheels2[3].SetBrakeTorque(brakeSystem.BrakeTorque);
+                //    m_Wheels2[0].SetBrakeTorque(brakeSystem.BrakeTorque);
+                //    m_Wheels2[1].SetBrakeTorque(brakeSystem.BrakeTorque);
+                //}
+                //else
+                //{
+                //    m_Wheels2[2].gameObject.SetActive(false);
+                //    m_Wheels2[3].gameObject.SetActive(false);
+                //    m_Wheels2[0].gameObject.SetActive(false);
+                //    m_Wheels2[1].gameObject.SetActive(false);
+                //}
                 m_Wheels[2].SetBrakeTorque(brakeSystem.BrakeTorque);
                 m_Wheels[3].SetBrakeTorque(brakeSystem.BrakeTorque);
                 break;
@@ -142,6 +162,11 @@ public class CarControlCenter : ScriptBase, IUpdate,IRelease
                 m_Wheels[3].SetBrakeTorque(brakeSystem.BrakeTorque);
                 break;
         }
+    }
+
+    public float GetAccelerator()
+    {
+        return 0;
     }
 
     /// <summary>

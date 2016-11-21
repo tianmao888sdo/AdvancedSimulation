@@ -9,7 +9,7 @@ public interface IEngine
     /// <summary>
     /// 当前转速
     /// </summary>
-    float RMP { get; }
+    float RPM { get; }
 
     /// <summary>
     /// 当前扭矩

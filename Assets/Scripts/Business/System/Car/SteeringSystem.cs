@@ -8,20 +8,23 @@ using System;
 public class SteeringSystem : ScriptBase, ISteering,IRelease
 {
     [SerializeField]
-    private Wheel[] wheels = new Wheel[2];
+    private Wheel[] m_wheels = new Wheel[2];
 
     /// <summary>
     /// 最大转向角度
     /// </summary>
-    [SerializeField]
-    private float maxSteerAngle = 30f;
+    [SerializeField][Range(0,90f)]
+    private float m_maxSteerAngle = 30f;
 
     /// <summary>
     /// 当前转向角度
     /// </summary>
     [SerializeField]
-    private float currSteerAngle = 0f;
+    private float m_currSteerAngle = 0f;
 
+    /// <summary>
+    /// 方向盘输入
+    /// </summary>
     private float m_steeringInput = 0f;
 
     public override void Init()
@@ -46,11 +49,11 @@ public class SteeringSystem : ScriptBase, ISteering,IRelease
     public void SetSteeringInput(float val)
     {
         m_steeringInput = val;
-        currSteerAngle = m_steeringInput * maxSteerAngle;
+        m_currSteerAngle = m_steeringInput * m_maxSteerAngle;
 
         //计算前束角
-        wheels[0].SetSteerAngle(currSteerAngle);
-        wheels[1].SetSteerAngle(currSteerAngle);
+        m_wheels[0].SetSteerAngle(m_currSteerAngle);
+        m_wheels[1].SetSteerAngle(m_currSteerAngle);
     }
 
     public void Release(bool destroy = false)

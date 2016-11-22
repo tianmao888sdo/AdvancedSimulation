@@ -60,12 +60,6 @@
     <Reference Include="UnityEngine.Networking">
       <HintPath>Library\UnityAssemblies\UnityEngine.Networking.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEngine.Networking">
-      <HintPath>Library\UnityAssemblies\UnityEngine.Networking.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.UI">
-      <HintPath>Library\UnityAssemblies\UnityEngine.UI.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Business\Core\CarStatus.cs" />
@@ -95,6 +89,7 @@
     <Compile Include="Assets\Scripts\Business\System\Car\Interface\ISteering.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\Interface\IWheel.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\ScriptBase.cs" />
+    <Compile Include="Assets\Scripts\Business\System\Car\ShowAttr.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\SteeringSystem.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\Wheel.cs" />
     <Compile Include="Assets\Scripts\Business\System\Input\KeyInputManager.cs" />
@@ -108,6 +103,7 @@
     <Compile Include="Assets\Scripts\Business\System\Scene\AbsScene.cs" />
     <Compile Include="Assets\Scripts\Business\System\Sfx\SfxManager.cs" />
     <Compile Include="Assets\Scripts\Business\System\Vfx\VfxManager.cs" />
+    <Compile Include="Assets\Scripts\Com\BWheelCollider.cs" />
     <Compile Include="Assets\Scripts\Com\ChangeTrace.cs" />
     <Compile Include="Assets\Scripts\Com\CollectionUtil.cs" />
     <Compile Include="Assets\Scripts\Com\MemUtil.cs" />

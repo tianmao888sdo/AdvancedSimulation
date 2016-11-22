@@ -11,45 +11,51 @@ public class EngineSystem: ScriptBase, IEngine,IRelease
     /// 最大转速，转速/分钟
     /// </summary>
     [SerializeField]
-    private float maxRPM = 7000f;
+    private float m_maxRPM = 7000f;
 
     /// <summary>
     /// 转速加速性，转速/分钟
     /// 需要通过变速箱传回的力来计算真正的加速
     /// </summary>
     [SerializeField]
-    private float rpmAcceleration = 1000f;
+    private float m_rpmAcceleration = 1000f;
 
     /// <summary>
     /// 转速减速性，转速/分钟
     /// 需要通过变速箱传回的力来计算真正的减速
     /// </summary>
     [SerializeField]
-    private float rpmDeceleration=1000f;
-
-    /// <summary>
-    /// 发动机曲轴半径，单位米
-    /// </summary>
-    [SerializeField]
-    private float crankShaftR = 0.1f;
+    private float m_rpmDeceleration=1000f;
 
     /// <summary>
     /// torque/rpm曲线
     /// </summary>
     [SerializeField]
-    private AnimationCurve torqueRpmCurve;
+    private AnimationCurve m_torqueRpmCurve;
 
     /// <summary>
     /// 机械效率，热能，粘滞阻力带来的损失
     /// </summary>
-    [SerializeField]
-    private float mechanicalEfficiency = 1f;
+    [SerializeField][Range(0,1f)]
+    private float m_mechanicalEfficiency = 1f;
 
     /// <summary>
     /// 质量
     /// </summary>
     [SerializeField]
-    private float mass = 20f;
+    private float m_mass = 20f;
+
+    /// <summary>
+    /// 传动轴质量
+    /// </summary>
+    [SerializeField]
+    private float m_crankShaftMass = 2f;
+
+    /// <summary>
+    /// 发动机曲轴半径，单位米
+    /// </summary>
+    [SerializeField]
+    private float m_crankShaftRadius = 0.1f;
 
     /// <summary>
     /// 油门输入
@@ -94,7 +100,7 @@ public class EngineSystem: ScriptBase, IEngine,IRelease
     /// <summary>
     /// 公制马力
     /// </summary>
-    public float Ps { get { return m_watts* 0.735f; } }
+    public float Ps { get { return m_watts; } }
 
     /// <summary>
     /// 曲轴输出力
@@ -104,12 +110,12 @@ public class EngineSystem: ScriptBase, IEngine,IRelease
     /// <summary>
     /// 转动惯量，惯量会带啦扭矩损失
     /// </summary>
-    public float MomentofInertia { get { return 0.5f*mass*crankShaftR* crankShaftR; } }
+    public float MomentofInertia { get { return 0.5f* m_crankShaftMass * m_crankShaftRadius* m_crankShaftRadius; } }
 
     /// <summary>
     /// 角加速度
     /// </summary>
-    public float ShaftAngleAcc = 0f;
+    public float ShaftAngleAcc { get { return 0f; } }
 
     public override void Init()
     {
@@ -125,16 +131,16 @@ public class EngineSystem: ScriptBase, IEngine,IRelease
             new Keyframe(7000,110)
         };
 
-        torqueRpmCurve = new AnimationCurve(keys);
-        torqueRpmCurve.SmoothTangents(0, 1);
-        torqueRpmCurve.SmoothTangents(1, 1);
-        torqueRpmCurve.SmoothTangents(2, 1);
-        torqueRpmCurve.SmoothTangents(3, 1);
-        torqueRpmCurve.SmoothTangents(4, 1);
-        torqueRpmCurve.SmoothTangents(5, 1);
-        torqueRpmCurve.SmoothTangents(6, 1);
+        m_torqueRpmCurve = new AnimationCurve(keys);
+        m_torqueRpmCurve.SmoothTangents(0, 1);
+        m_torqueRpmCurve.SmoothTangents(1, 1);
+        m_torqueRpmCurve.SmoothTangents(2, 1);
+        m_torqueRpmCurve.SmoothTangents(3, 1);
+        m_torqueRpmCurve.SmoothTangents(4, 1);
+        m_torqueRpmCurve.SmoothTangents(5, 1);
+        m_torqueRpmCurve.SmoothTangents(6, 1);
 
-        mechanicalEfficiency = 1f;
+        m_mechanicalEfficiency = 1f;
     }
 
     public override void Play()
@@ -156,17 +162,17 @@ public class EngineSystem: ScriptBase, IEngine,IRelease
 
         if (m_throttleInput > 0)
         {
-            m_rpm += m_throttleInput * rpmAcceleration * Time.deltaTime;
+            m_rpm += m_throttleInput * m_rpmAcceleration * Time.deltaTime;
         }
         else
         {
-            m_rpm -= rpmDeceleration * Time.deltaTime;
+            m_rpm -= m_rpmDeceleration * Time.deltaTime;
         }
 
-        m_rpm = Mathf.Clamp(m_rpm, 0f, maxRPM);
-        m_torque= torqueRpmCurve.Evaluate(m_rpm) * mechanicalEfficiency;
-        m_watts = m_torque * m_rpm*mechanicalEfficiency / 9549;
-        m_force = m_torque * mechanicalEfficiency / crankShaftR;
+        m_rpm = Mathf.Clamp(m_rpm, 0f, m_maxRPM);
+        m_torque= m_torqueRpmCurve.Evaluate(m_rpm) * m_mechanicalEfficiency;
+        m_watts = m_torque *0.735f*m_rpm*m_mechanicalEfficiency / 9549;
+        m_force = m_torque * m_mechanicalEfficiency / m_crankShaftRadius;
     }
 
     public void Release(bool destroy = false)

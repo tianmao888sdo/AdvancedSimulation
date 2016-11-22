@@ -10,70 +10,75 @@ public class GearBoxSystem : ScriptBase, IGearBox,IRelease
     /// <summary>
     /// 档位
     /// </summary>
-    public class Gear
+    public struct Gear
     {
+        /// <summary>
+        /// 质量
+        /// </summary>
+        public float mass;
+
+        /// <summary>
+        /// 半径
+        /// </summary>
+        public float radius;
+
         /// <summary>
         /// 传动比
         /// </summary>
-        public float speedRatio = 0f;
-
-        /// <summary>
-        /// 转动惯量
-        /// </summary>
-        public float momentofInertia = 0f;
+        public float speedRatio;
 
         /// <summary>
         /// 传动效率
         /// </summary>
-        public float efficiency = 0f;
+        public float efficiency;
 
-        public Gear(float speedRatio,float momentofInertia,float efficiency)
+        public Gear(float speedRatio,float efficiency, float mass=0, float radius=0)
         {
             this.speedRatio = speedRatio;
-            this.momentofInertia = momentofInertia;
             this.efficiency = efficiency;
+            this.mass = mass;
+            this.radius = radius;
         }
     }
 
     /// <summary>
     /// 齿轮速比
     /// </summary>
-    [SerializeField]
-    private Gear[] gears;
+    private Gear[] m_gears;
 
     /// <summary>
     /// 输入
     /// </summary>
     [SerializeField]
-    private int input = 0;
+    private int m_input = 0;
 
     /// <summary>
     /// 输出
     /// </summary>
     [SerializeField]
-    private int output = 0;
+    private int m_output = 0;
 
     /// <summary>
     /// 机械效率，热能，粘滞阻力带来的损失
     /// </summary>
-    [SerializeField]
-    private float mechanicalEfficiency = 1f;
+    [SerializeField][Range(0,1f)]
+    private float m_mechanicalEfficiency = 1f;
 
     /// <summary>
     /// 质量
     /// </summary>
     [SerializeField]
-    private float mass=5f;
-
-    /// <summary>
-    /// 离合
-    /// </summary>
-    private float m_clutch=0f;
+    private float m_mass=5f;
 
     /// <summary>
     /// 当前档位
     /// </summary>
     private int m_gearIndex = 0;
+
+    /// <summary>
+    /// 离合
+    /// </summary>
+    private float m_clutch=0f;
 
     /// <summary>
     /// 输入扭矩
@@ -87,31 +92,36 @@ public class GearBoxSystem : ScriptBase, IGearBox,IRelease
     {
         get
         {
-            return mechanicalEfficiency*(input / output) * (1- m_clutch) * m_torqueInput * gears[m_gearIndex].speedRatio* gears[m_gearIndex].efficiency;
+            return m_mechanicalEfficiency*(m_input / m_output) * (1- m_clutch) * m_torqueInput * m_gears[m_gearIndex].speedRatio* m_gears[m_gearIndex].efficiency;
         }
     }
 
     /// <summary>
-    /// 转动惯量，惯量会带啦扭矩损失
+    /// 当前转动惯量，惯量会带啦扭矩损失
     /// </summary>
-    //public float MomentofInertia { get { return 0.5f * mass; } }
+    public float MomentofInertia { get { return m_gears[m_gearIndex].mass* m_gears[m_gearIndex].radius* m_gears[m_gearIndex].radius; } }
+
+    /// <summary>
+    /// 角加速度
+    /// </summary>
+    public float ShaftAngleAcc { get { return 0f; } }
 
     public override void Init()
     {
         //读取配置文件获得参数
 
-        gears = new Gear[]
+        m_gears = new Gear[]
         {
-            new Gear(7.31f,1f,0.966f),
-            new Gear(4.31f,1f,0.967f),
-            new Gear(2.45f,1f,0.972f),
-            new Gear(1.54f,1f,0.973f),
-            new Gear(1f,1f,0.975f),
-            new Gear(7.66f,1f,0.95f)
+            new Gear(7.31f,0.966f),
+            new Gear(4.31f,0.967f),
+            new Gear(2.45f,0.972f),
+            new Gear(1.54f,0.973f),
+            new Gear(1f,0.975f),
+            new Gear(7.66f,0.95f)
         };
 
-        input = 145;
-        output = 145;
+        m_input = 145;
+        m_output = 145;
     }
 
     public override void Play()

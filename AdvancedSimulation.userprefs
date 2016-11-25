@@ -1,0 +1,15 @@
+﻿<Properties StartupItem="Assembly-CSharp.csproj">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Scripts/Business/System/Input/SignalInputManager.cs">
+    <Files>
+      <File FileName="Assets/Scripts/Business/System/Input/SignalInputManager.cs" Line="343" Column="1" />
+      <File FileName="Assets/Scripts/Business/Core/Global.cs" Line="10" Column="20" />
+      <File FileName="Assets/Scripts/Business/System/Car/CarControlCenter.cs" Line="57" Column="1" />
+      <File FileName="Assets/Scripts/Business/System/Car/ScriptBase.cs" Line="14" Column="30" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>

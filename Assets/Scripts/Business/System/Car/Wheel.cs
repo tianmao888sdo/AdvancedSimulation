@@ -6,7 +6,7 @@ using System;
 /// 轮胎,负责，驱动轮胎转动，刹车和转向
 /// </summary>
 [ExecuteInEditMode]
-public class Wheel : ScriptBase, IWheel, IRelease
+public class Wheel : MonoBase, IWheel, IRelease
 {
     /// <summary>
     /// 主轮胎
@@ -68,16 +68,6 @@ public class Wheel : ScriptBase, IWheel, IRelease
         //查找wheelCollider和wheelMesh
         m_helpWheelCollider.mass=m_masterWheelCollider.mass = m_mass;
         m_helpWheelCollider.radius=m_masterWheelCollider.radius = m_radius;
-    }
-
-    public override void Play()
-    {
-        throw new NotImplementedException();
-    }
-
-    public override void Stop()
-    {
-        throw new NotImplementedException();
     }
 
     public void SetMotorTorque(float val)

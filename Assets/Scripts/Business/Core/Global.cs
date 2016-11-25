@@ -1,13 +1,17 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Global : MonoBehaviour {
+public class Global : MonoBase {
 
     public CarControlCenter car;
 
 	// Use this for initialization
 	void Start (){
-        car.Init();
-        car.Play();
+		Init ();
     }
+
+	public override void Init()
+	{
+		car.Init();
+	}
 }

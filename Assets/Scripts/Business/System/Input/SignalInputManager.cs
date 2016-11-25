@@ -6,18 +6,9 @@ using System;
 /// <summary>
 /// 信号输入管理器，数值监控，尺必须先加载完成才能初始化
 /// </summary>
-public class SignalInputManager :MonoBehaviour,IUpdate, IRelease
+public class SignalInputManager :ScriptBase, IUpdate,IRelease
 {
-    #region 单例
-    private static SignalInputManager instance;
-    public static SignalInputManager Instance
-    {
-        get
-        {
-            return instance;
-        }
-    }
-    #endregion
+	public static readonly SignalInputManager Instance=new SignalInputManager();
 
     /// <summary>
     /// 输入信号枚举
@@ -242,11 +233,7 @@ public class SignalInputManager :MonoBehaviour,IUpdate, IRelease
 
     private void nullDelegate(int _val) { }
 
-    void Awake()
-    {
-        instance = this;
-    }
-    public void Init()
+	public override void Init()
     {
         //添加空方法，防止空对象错误
         DelegateGear = nullDelegate;
@@ -338,19 +325,19 @@ public class SignalInputManager :MonoBehaviour,IUpdate, IRelease
         }
     }
 
-    public void Update()
+	public void Update()
     {
         ValTrace();
     }
 
-    public void Play()
+	public override void Play()
     {
-        GameManager.Instance.AddUpdater(this);
+		GameManager.Instance.AddUpdater (this);
     }
 
-    public void Stop()
+	public override void Stop()
     {
-        GameManager.Instance.RemoveUpdater(this);
+		GameManager.Instance.RemoveUpdater (this);
     }
 
     /// <summary>

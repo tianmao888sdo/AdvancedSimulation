@@ -5,23 +5,14 @@ using System;
 /// <summary>
 /// 减速器
 /// </summary>
-public class GearReducerSystem : ScriptBase,IRelease {
+public class GearReducerSystem : MonoBase,IRelease 
+{
     public override void Init()
     {
         throw new NotImplementedException();
     }
 
-    public override void Play()
-    {
-        throw new NotImplementedException();
-    }
-
     public void Release(bool destroy = false)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override void Stop()
     {
         throw new NotImplementedException();
     }

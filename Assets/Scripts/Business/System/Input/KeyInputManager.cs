@@ -6,18 +6,9 @@ using System.Collections.Generic;
 /// <summary>
 /// 键盘事件管理器
 /// </summary>
-public class KeyInputManager :MonoBehaviour,IUpdate,IRelease
+public class KeyInputManager :ScriptBase,IUpdate,IRelease
 {
-    #region 单例
-    private static KeyInputManager instance;
-    public static KeyInputManager Instance
-    {
-        get
-        {
-            return instance;
-        }
-    }
-    #endregion
+	public static readonly KeyInputManager Instance=new KeyInputManager();
 
     /// <summary>
     /// 轴委托
@@ -42,12 +33,7 @@ public class KeyInputManager :MonoBehaviour,IUpdate,IRelease
 
     private InputMode m_currInputMode = InputMode.Global;
 
-	// Use this for initialization
-	void Awake () {
-        instance = this;
-	}
-
-    public void Init()
+	public override void Init()
     {
         m_dicKeyboard.Add(InputMode.Global, new Dictionary<KeyCode, Action>());
         m_dicAxis.Add(InputMode.Global, new Dictionary<string, AxisDelegate>());
@@ -61,12 +47,12 @@ public class KeyInputManager :MonoBehaviour,IUpdate,IRelease
         UpdateAxisDelegates(m_currInputMode);
 	}
 
-    public void Play()
+    public override  void Play()
     {
         GameManager.Instance.AddUpdater(this);
     }
 
-    public void Stop()
+	public override void Stop()
     {
         GameManager.Instance.RemoveUpdater(this);
     }

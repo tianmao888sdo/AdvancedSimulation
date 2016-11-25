@@ -5,7 +5,7 @@ using System;
 /// <summary>
 /// 车辆控制中心，所有对车的操作，全部集中到这里，最终将操作作用于4个轮子
 /// </summary>
-public class CarControlCenter : ScriptBase, IUpdate,IRelease
+public class CarControlCenter : MonoBase,IRelease
 {
     /// <summary>
     /// 属性
@@ -47,10 +47,10 @@ public class CarControlCenter : ScriptBase, IUpdate,IRelease
     [SerializeField]
     private Wheel[] m_Wheels = new Wheel[4];
 
-    void OnGUI()
-    {
-        m_carAttributes.brake=GUI.HorizontalSlider(new Rect(0, 0, 200, 30), m_carAttributes.brake,0,1);
-    }
+//    void OnGUI()
+//    {
+//        m_carAttributes.brake=GUI.HorizontalSlider(new Rect(0, 0, 200, 30), m_carAttributes.brake,0,1);
+//    }
 
     public override void Init()
     {
@@ -72,9 +72,11 @@ public class CarControlCenter : ScriptBase, IUpdate,IRelease
 
         KeyInputManager.Instance.Init();
         KeyInputManager.Instance.SetInputMode(KeyInputManager.InputMode.CarControl);
+		KeyInputManager.Instance.Play ();
 
-        SignalInputManager.Instance.carAttributes = m_carAttributes;
-        SignalInputManager.Instance.Init();
+		SignalInputManager.Instance.carAttributes = m_carAttributes;
+		SignalInputManager.Instance.Init ();	
+		SignalInputManager.Instance.Play ();	
 
         //全部子部件初始化
         m_engineSystem.Init();
@@ -86,17 +88,7 @@ public class CarControlCenter : ScriptBase, IUpdate,IRelease
             m_Wheels[i].Init();
     }
 
-    public override void Play()
-    {
-        GameManager.Instance.AddUpdater(this);
-    }
-
-    public override void Stop()
-    {
-        GameManager.Instance.RemoveUpdater(this);
-    }
-
-    public void Update()
+	private void Update()
     {
         m_engineSystem.SetThrottleInput(m_carAttributes.accelerator);
         m_gearBoxSystem.SetGear(1);

@@ -5,7 +5,7 @@ using System;
 /// <summary>
 /// 
 /// </summary>
-public class EngineSystem: ScriptBase, IEngine,IRelease
+public class EngineSystem: MonoBase, IEngine,IRelease
 {
     /// <summary>
     /// 最大转速，转速/分钟
@@ -141,16 +141,6 @@ public class EngineSystem: ScriptBase, IEngine,IRelease
         m_torqueRpmCurve.SmoothTangents(6, 1);
 
         m_mechanicalEfficiency = 1f;
-    }
-
-    public override void Play()
-    {
-        throw new NotImplementedException();
-    }
-
-    public override void Stop()
-    {
-        throw new NotImplementedException();
     }
 
     /// <summary>

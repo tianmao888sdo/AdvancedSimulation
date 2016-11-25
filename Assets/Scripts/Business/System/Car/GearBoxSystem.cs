@@ -5,7 +5,7 @@ using System;
 /// <summary>
 /// 变速箱
 /// </summary>
-public class GearBoxSystem : ScriptBase, IGearBox,IRelease
+public class GearBoxSystem : MonoBase, IGearBox,IRelease
 {
     /// <summary>
     /// 档位
@@ -122,16 +122,6 @@ public class GearBoxSystem : ScriptBase, IGearBox,IRelease
 
         m_input = 145;
         m_output = 145;
-    }
-
-    public override void Play()
-    {
-        throw new NotImplementedException();
-    }
-
-    public override void Stop()
-    {
-        throw new NotImplementedException();
     }
 
     /// <summary>

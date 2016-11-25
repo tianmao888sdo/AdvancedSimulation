@@ -5,7 +5,7 @@ using System;
 /// <summary>
 /// 刹车系统
 /// </summary>
-public class BrakeSystem : ScriptBase,IRelease {
+public class BrakeSystem : MonoBase,IRelease {
 
     /// <summary>
     /// 最大刹车力矩
@@ -33,16 +33,6 @@ public class BrakeSystem : ScriptBase,IRelease {
     public override void Init()
     {
 
-    }
-
-    public override void Play()
-    {
-        throw new NotImplementedException();
-    }
-
-    public override void Stop()
-    {
-        throw new NotImplementedException();
     }
 
     /// <summary>

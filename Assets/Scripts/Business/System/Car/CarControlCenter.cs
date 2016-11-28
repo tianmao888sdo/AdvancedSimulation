@@ -47,16 +47,19 @@ public class CarControlCenter : MonoBase,IRelease
     [SerializeField]
     private Wheel[] m_Wheels = new Wheel[4];
 
+//	private float his;
+
 //    void OnGUI()
 //    {
 //        m_carAttributes.brake=GUI.HorizontalSlider(new Rect(0, 0, 200, 30), m_carAttributes.brake,0,1);
+//		his=GUI.HorizontalSlider(new Rect(0, 30, 200, 30), his,0,0.02f);
 //    }
-
+//
     public override void Init()
     {
         KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Horizontal", (number) =>{m_carAttributes.steering = Mathf.Clamp(number, -1f, 1f);});
         KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Vertical", (number) => { m_carAttributes.accelerator = Mathf.Clamp(number, 0, 1); });
-   //     KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Jump", (number) => { m_carAttributes.brake = Mathf.Clamp(number, 0, 1); });
+        KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Jump", (number) => { m_carAttributes.brake = Mathf.Clamp(number, 0, 1); });
 
         KeyInputManager.Instance.AddKeyboardDelegate(KeyInputManager.InputMode.CarControl, KeyCode.C, OnKeyC);
         KeyInputManager.Instance.AddKeyboardDelegate(KeyInputManager.InputMode.CarControl, KeyCode.P, OnKeyP);
@@ -96,24 +99,10 @@ public class CarControlCenter : MonoBase,IRelease
         m_gearBoxSystem.SetClutch(0);
         m_steeringSystem.SetSteeringInput(m_carAttributes.steering);
 
-        for (int i = 0; i < 4; i++)
-        {
-            JointSpring spring = new JointSpring();
-            spring.spring = 70000f * (1 - m_carAttributes.brake);
-            spring.damper = 0f;
-            spring.targetPosition = 0.1f;
-
-            JointSpring spring2 = new JointSpring();
-            spring2.spring = 70000f * m_carAttributes.brake;
-            spring2.damper = 0f;
-            spring2.targetPosition = 0.1f;
-
-            m_Wheels[i].MasterWheelCollider.suspensionSpring = spring;
-            m_Wheels[i].HelpWheelCollider.suspensionSpring = spring2;
-        }
-
-        m_brakeSystem.SetBrakeInput(m_carAttributes.brake);
-        Move(m_gearBoxSystem.OutputTorque, m_brakeSystem.BrakeTorque);
+	    m_brakeSystem.SetBrakeInput(m_carAttributes.brake);
+	    Move(m_gearBoxSystem.OutputTorque, m_brakeSystem.BrakeTorque);
+		//暂时用刹车比例代替刹车力矩
+		//Move(m_gearBoxSystem.OutputTorque,m_carAttributes.brake);
 
         for (int i = 0; i < 4; i++)
             m_Wheels[i].UpdateWheels();
@@ -152,32 +141,14 @@ public class CarControlCenter : MonoBase,IRelease
         switch (m_carAttributes.brakeMode)
         {
             case CarAttributes.BrakeMode.RearTwoBrake:
-                //if(brakeSystem.BrakeTorque > 0)
-                //{
-                //    m_Wheels2[2].gameObject.SetActive(true);
-                //    m_Wheels2[3].gameObject.SetActive(true);
-                //    m_Wheels2[0].gameObject.SetActive(true);
-                //    m_Wheels2[1].gameObject.SetActive(true);
-                //    m_Wheels2[2].SetBrakeTorque(brakeSystem.BrakeTorque);
-                //    m_Wheels2[3].SetBrakeTorque(brakeSystem.BrakeTorque);
-                //    m_Wheels2[0].SetBrakeTorque(brakeSystem.BrakeTorque);
-                //    m_Wheels2[1].SetBrakeTorque(brakeSystem.BrakeTorque);
-                //}
-                //else
-                //{
-                //    m_Wheels2[2].gameObject.SetActive(false);
-                //    m_Wheels2[3].gameObject.SetActive(false);
-                //    m_Wheels2[0].gameObject.SetActive(false);
-                //    m_Wheels2[1].gameObject.SetActive(false);
-                //}
-                m_Wheels[2].SetBrakeTorque(m_brakeSystem.BrakeTorque);
-                m_Wheels[3].SetBrakeTorque(m_brakeSystem.BrakeTorque);
+				m_Wheels[2].SetBrakeTorque(brakeTorque);
+				m_Wheels[3].SetBrakeTorque(brakeTorque);
                 break;
-            case CarAttributes.BrakeMode.FourBrake:
-                m_Wheels[0].SetBrakeTorque(m_brakeSystem.BrakeTorque);
-                m_Wheels[1].SetBrakeTorque(m_brakeSystem.BrakeTorque);
-                m_Wheels[2].SetBrakeTorque(m_brakeSystem.BrakeTorque);
-                m_Wheels[3].SetBrakeTorque(m_brakeSystem.BrakeTorque);
+		case CarAttributes.BrakeMode.FourBrake:
+				m_Wheels[0].SetBrakeTorque(brakeTorque);
+				m_Wheels[1].SetBrakeTorque(brakeTorque);
+				m_Wheels[2].SetBrakeTorque(brakeTorque);
+				m_Wheels[3].SetBrakeTorque(brakeTorque);
                 break;
         }
     }

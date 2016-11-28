@@ -92,7 +92,9 @@ public class GearBoxSystem : MonoBase, IGearBox,IRelease
     {
         get
         {
-            return m_mechanicalEfficiency*(m_input / m_output) * (1- m_clutch) * m_torqueInput * m_gears[m_gearIndex].speedRatio* m_gears[m_gearIndex].efficiency;
+			float t_torque = m_mechanicalEfficiency * (m_input / m_output) * (1 - m_clutch) * m_torqueInput * m_gears [m_gearIndex].speedRatio * m_gears [m_gearIndex].efficiency;
+			t_torque = Mathf.Max (0.000001f, t_torque);
+			return t_torque;
         }
     }
 

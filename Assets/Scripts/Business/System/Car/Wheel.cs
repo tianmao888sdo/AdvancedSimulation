@@ -15,10 +15,16 @@ public class Wheel : MonoBase, IWheel, IRelease
     private WheelCollider m_masterWheelCollider;
 
     /// <summary>
-    /// 刹车轮胎
+    /// 刹车轮胎,用物理材质来模拟刹车摩擦力，只使用动态摩擦力，静态摩擦力一直保持0
     /// </summary>
     [SerializeField]
-    private WheelCollider m_helpWheelCollider;
+	private WheelCollider m_brakeWheelCollider;
+
+	/// <summary>
+	/// 刹车轮胎,用物理材质来模拟刹车摩擦力，只使用动态摩擦力，静态摩擦力一直保持0
+	/// </summary>
+	[SerializeField]
+	private WheelCollider m_brakeWheelCollider2;
 
     /// <summary>
     /// 轮胎外观
@@ -44,6 +50,17 @@ public class Wheel : MonoBase, IWheel, IRelease
     [SerializeField][Range(0,1f)]
     private float m_mechanicalEfficiency = 1f;
 
+	/// <summary>
+	/// 刹车轮胎上下可移动的最大距离
+	/// </summary>
+	[SerializeField]
+	private float m_brakeWheelMaxDis=0.01f;
+
+	/// <summary>
+	/// 刹车轮胎上下移动的距离
+	/// </summary>
+	private float m_brakeWheelDis = 0f;
+
     /// <summary>
     /// 转动惯量，惯量会带啦扭矩损失
     /// </summary>
@@ -58,43 +75,68 @@ public class Wheel : MonoBase, IWheel, IRelease
         get { return m_masterWheelCollider; }
     }
 
-    public WheelCollider HelpWheelCollider
-    {
-        get { return m_helpWheelCollider; }
-    }
-
     public override void Init()
     {
         //查找wheelCollider和wheelMesh
-        m_helpWheelCollider.mass=m_masterWheelCollider.mass = m_mass;
-        m_helpWheelCollider.radius=m_masterWheelCollider.radius = m_radius;
+		m_brakeWheelCollider2.mass=m_brakeWheelCollider.mass=m_masterWheelCollider.mass = m_mass;
+		m_brakeWheelCollider2.radius=m_brakeWheelCollider.radius=m_masterWheelCollider.radius = m_radius;
+		m_brakeWheelCollider.steerAngle = 45;
+		m_brakeWheelCollider2.steerAngle = -45;
     }
 
+	/// <summary>
+	/// 设置驱动扭矩
+	/// </summary>
+	/// <param name="val"></param>
     public void SetMotorTorque(float val)
     {
         //val -= 1000*0.25f * 9.8f * Vector3.Dot(masterWheelCollider.transform.forward, Vector3.up);
-        //Rigidbody r;
-     
-        //Debug.Log(val);
-
-        //if (Mathf.Abs(val) < 100f)
-        //    val = 0;
+		//模拟重力
 
         m_masterWheelCollider.motorTorque =  val;
     }
 
+	/// <summary>
+	/// 设置刹车扭矩
+	/// </summary>
+	/// <param name="val"></param>
     public void SetBrakeTorque(float val)
     {
-        m_helpWheelCollider.brakeTorque = val;
+
+			WheelFrictionCurve forwardCurve=new WheelFrictionCurve ();
+			WheelFrictionCurve sidewayCurve=new WheelFrictionCurve ();
+			forwardCurve.asymptoteSlip = 0.4f;
+			forwardCurve.asymptoteValue = 1f;
+			forwardCurve.extremumSlip = 0.8f;
+			forwardCurve.extremumValue = 0.5f;
+			forwardCurve.stiffness =val>1?1:0;
+
+			sidewayCurve.asymptoteSlip = 0.2f;
+			sidewayCurve.asymptoteValue = 1f;
+			sidewayCurve.extremumSlip = 0.5f;
+			sidewayCurve.extremumValue = 0.75f;
+			sidewayCurve.stiffness = 0;
+
+			m_brakeWheelCollider.forwardFriction = m_brakeWheelCollider2.forwardFriction = forwardCurve;
+			m_brakeWheelCollider.sidewaysFriction = m_brakeWheelCollider2.sidewaysFriction = sidewayCurve;
+		
+
+		m_brakeWheelCollider.brakeTorque = val;
+		m_brakeWheelCollider2.brakeTorque = val;
     }
 
+	/// <summary>
+	/// 转向
+	/// </summary>
+	/// <param name="val"></param>
     public void SetSteerAngle(float val)
     {
         m_masterWheelCollider.steerAngle = val;
-        m_helpWheelCollider.steerAngle = val;
     }
 
-    // Update is called once per frame
+    /// <summary>
+    /// 更新轮胎位置
+    /// </summary>
     public void UpdateWheels()
     {
         Quaternion quat;
@@ -102,6 +144,9 @@ public class Wheel : MonoBase, IWheel, IRelease
         m_masterWheelCollider.GetWorldPose(out position, out quat);
         m_wheelMesh.transform.position = position;
         m_wheelMesh.transform.rotation = quat;
+//
+//		//刹车时让刹车轮胎接触地面，否则，离开地面
+//		m_brakeWheelCollider.transform.position =new Vector3(position.x,position.y-m_brakeWheelDis,position.z);
     }
 
     public void Release(bool destroy = false)

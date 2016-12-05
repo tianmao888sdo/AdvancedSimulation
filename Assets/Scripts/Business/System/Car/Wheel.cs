@@ -50,16 +50,22 @@ public class Wheel : MonoBase, IWheel, IRelease
     [SerializeField][Range(0,1f)]
     private float m_mechanicalEfficiency = 1f;
 
-	/// <summary>
-	/// 刹车轮胎上下可移动的最大距离
-	/// </summary>
-	[SerializeField]
+    /// <summary>
+    /// 刹车曲线
+    /// </summary>
+    [SerializeField]
+    private AnimationCurve m_brakeCurve;
+
+    /// <summary>
+    /// 刹车轮胎上下可移动的最大距离
+    /// </summary>
+    [SerializeField]
 	private float m_brakeWheelMaxDis=0.01f;
 
 	/// <summary>
 	/// 刹车轮胎上下移动的距离
 	/// </summary>
-	private float m_brakeWheelDis = 0f;
+	private float m_brakeWheelDis = 0;
 
     /// <summary>
     /// 转动惯量，惯量会带啦扭矩损失
@@ -80,8 +86,38 @@ public class Wheel : MonoBase, IWheel, IRelease
         //查找wheelCollider和wheelMesh
 		m_brakeWheelCollider2.mass=m_brakeWheelCollider.mass=m_masterWheelCollider.mass = m_mass;
 		m_brakeWheelCollider2.radius=m_brakeWheelCollider.radius=m_masterWheelCollider.radius = m_radius;
-		m_brakeWheelCollider.steerAngle = 45;
-		m_brakeWheelCollider2.steerAngle = -45;
+        m_brakeWheelCollider.steerAngle = 45;
+        m_brakeWheelCollider2.steerAngle = -45;
+
+        JointSpring spring = m_masterWheelCollider.suspensionSpring;
+        spring.spring = 70000;
+        m_masterWheelCollider.suspensionSpring = spring;
+        spring.spring = 0;
+        spring.damper = 0f;
+        m_brakeWheelCollider.suspensionSpring = m_brakeWheelCollider2.suspensionSpring = spring;
+
+        //读取配置文件获得参数
+        Keyframe[] keys = new Keyframe[]
+        {
+            new Keyframe(0,0),
+            new Keyframe(0.1f,1.5f),
+            new Keyframe(0.2f,1.6f),
+            new Keyframe(0.3f,1.7f),
+            new Keyframe(0.4f,1.8f),
+            new Keyframe(0.5f,1.9f),
+            new Keyframe(0.6f,2.0f),
+            new Keyframe(0.7f,2.5f),
+            new Keyframe(0.8f,2.8f),
+            new Keyframe(0.9f,3.0f),
+            new Keyframe(1.0f,4.0f)
+        };
+
+        m_brakeCurve = new AnimationCurve(keys);
+
+        for(int i=0;i<10;i++)
+        {
+            m_brakeCurve.SmoothTangents(i, 1);
+        }
     }
 
 	/// <summary>
@@ -102,27 +138,23 @@ public class Wheel : MonoBase, IWheel, IRelease
 	/// <param name="val"></param>
     public void SetBrakeTorque(float val)
     {
+        //m_masterWheelCollider.center= new Vector3(0, 0.1f * val, 0);
+    //    m_brakeWheelCollider.center = m_brakeWheelCollider2.center = new Vector3(0, 0.05f * (1 - val), 0);
 
-			WheelFrictionCurve forwardCurve=new WheelFrictionCurve ();
-			WheelFrictionCurve sidewayCurve=new WheelFrictionCurve ();
-			forwardCurve.asymptoteSlip = 0.4f;
-			forwardCurve.asymptoteValue = 1f;
-			forwardCurve.extremumSlip = 0.8f;
-			forwardCurve.extremumValue = 0.5f;
-			forwardCurve.stiffness =val>1?1:0;
+        //JointSpring spring = m_masterWheelCollider.suspensionSpring;
+        //spring.spring = 70000*(1-val);
 
-			sidewayCurve.asymptoteSlip = 0.2f;
-			sidewayCurve.asymptoteValue = 1f;
-			sidewayCurve.extremumSlip = 0.5f;
-			sidewayCurve.extremumValue = 0.75f;
-			sidewayCurve.stiffness = 0;
+        //m_masterWheelCollider.suspensionSpring = spring;
+        //spring.spring = 70000 * val/2;
+        //m_brakeWheelCollider.suspensionSpring = m_brakeWheelCollider2.suspensionSpring=spring;
 
-			m_brakeWheelCollider.forwardFriction = m_brakeWheelCollider2.forwardFriction = forwardCurve;
-			m_brakeWheelCollider.sidewaysFriction = m_brakeWheelCollider2.sidewaysFriction = sidewayCurve;
-		
+        WheelFrictionCurve forwardCurve= m_brakeWheelCollider.forwardFriction;
+		WheelFrictionCurve sidewayCurve= m_brakeWheelCollider.sidewaysFriction;
+		forwardCurve.stiffness =0;
+		sidewayCurve.stiffness = m_brakeCurve.Evaluate(val);
 
-		m_brakeWheelCollider.brakeTorque = val;
-		m_brakeWheelCollider2.brakeTorque = val;
+		m_brakeWheelCollider.forwardFriction = m_brakeWheelCollider2.forwardFriction = forwardCurve;
+        m_brakeWheelCollider.sidewaysFriction = m_brakeWheelCollider2.sidewaysFriction = sidewayCurve;
     }
 
 	/// <summary>
@@ -144,9 +176,6 @@ public class Wheel : MonoBase, IWheel, IRelease
         m_masterWheelCollider.GetWorldPose(out position, out quat);
         m_wheelMesh.transform.position = position;
         m_wheelMesh.transform.rotation = quat;
-//
-//		//刹车时让刹车轮胎接触地面，否则，离开地面
-//		m_brakeWheelCollider.transform.position =new Vector3(position.x,position.y-m_brakeWheelDis,position.z);
     }
 
     public void Release(bool destroy = false)

@@ -47,19 +47,16 @@ public class CarControlCenter : MonoBase,IRelease
     [SerializeField]
     private Wheel[] m_Wheels = new Wheel[4];
 
-//	private float his;
+    void OnGUI()
+    {
+        m_carAttributes.brake = GUI.HorizontalSlider(new Rect(0, 0, 200, 30), m_carAttributes.brake, 0, 1);
+    }
 
-//    void OnGUI()
-//    {
-//        m_carAttributes.brake=GUI.HorizontalSlider(new Rect(0, 0, 200, 30), m_carAttributes.brake,0,1);
-//		his=GUI.HorizontalSlider(new Rect(0, 30, 200, 30), his,0,0.02f);
-//    }
-//
     public override void Init()
     {
         KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Horizontal", (number) =>{m_carAttributes.steering = Mathf.Clamp(number, -1f, 1f);});
         KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Vertical", (number) => { m_carAttributes.accelerator = Mathf.Clamp(number, 0, 1); });
-        KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Jump", (number) => { m_carAttributes.brake = Mathf.Clamp(number, 0, 1); });
+  //      KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Jump", (number) => { m_carAttributes.brake = Mathf.Clamp(number, 0, 1); });
 
         KeyInputManager.Instance.AddKeyboardDelegate(KeyInputManager.InputMode.CarControl, KeyCode.C, OnKeyC);
         KeyInputManager.Instance.AddKeyboardDelegate(KeyInputManager.InputMode.CarControl, KeyCode.P, OnKeyP);
@@ -99,13 +96,15 @@ public class CarControlCenter : MonoBase,IRelease
         m_gearBoxSystem.SetClutch(0);
         m_steeringSystem.SetSteeringInput(m_carAttributes.steering);
 
-	    m_brakeSystem.SetBrakeInput(m_carAttributes.brake);
-	    Move(m_gearBoxSystem.OutputTorque, m_brakeSystem.BrakeTorque);
-		//暂时用刹车比例代替刹车力矩
-		//Move(m_gearBoxSystem.OutputTorque,m_carAttributes.brake);
+        //m_brakeSystem.SetBrakeInput(m_carAttributes.brake);
+        //Move(m_gearBoxSystem.OutputTorque, m_brakeSystem.BrakeTorque);
+        //暂时用刹车比例代替刹车力矩
+        Move(m_gearBoxSystem.OutputTorque, m_carAttributes.brake);
 
         for (int i = 0; i < 4; i++)
             m_Wheels[i].UpdateWheels();
+
+  //      this.GetComponent<Rigidbody>().AddForce(Vector3.down*10000f);
     }
 
     /// <summary>

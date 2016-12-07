@@ -1,0 +1,165 @@
+fileFormatVersion: 2
+guid: 5f5215dbc55e51a4c86bacb860f2c1b2
+timeCreated: 1471512910
+licenseType: Pro
+ModelImporter:
+  serializedVersion: 19
+  fileIDToRecycleName:
+    100000: car_interior_parts
+    100002: door_L_Back
+    100004: door_L_Back_obj_L
+    100006: door_L_Front
+    100008: door_L_Front_obj_L
+    100010: door_R_Back
+    100012: door_R_Back_obj_L
+    100014: door_R_Front
+    100016: door_R_Front_obj_L
+    100018: head_rest_L_Front
+    100020: head_rest_R_Front
+    100022: Interior_rearview_mirror
+    100024: Interior_rearview_mirror_obj
+    100026: Lazyback_L
+    100028: Lazyback_L_Front
+    100030: Lazyback_R
+    100032: Lazyback_R_Front
+    100034: mirror_obj
+    100036: //RootNode
+    100038: Seat_cushion_L
+    100040: Seat_cushion_R
+    100042: Seat_L_Front
+    100044: Seat_R_Front
+    100046: Seatbody_L_Front
+    100048: Seatbody_R_Front
+    100050: Steering_wheel_base
+    100052: Steering_wheel_gro
+    400000: car_interior_parts
+    400002: door_L_Back
+    400004: door_L_Back_obj_L
+    400006: door_L_Front
+    400008: door_L_Front_obj_L
+    400010: door_R_Back
+    400012: door_R_Back_obj_L
+    400014: door_R_Front
+    400016: door_R_Front_obj_L
+    400018: head_rest_L_Front
+    400020: head_rest_R_Front
+    400022: Interior_rearview_mirror
+    400024: Interior_rearview_mirror_obj
+    400026: Lazyback_L
+    400028: Lazyback_L_Front
+    400030: Lazyback_R
+    400032: Lazyback_R_Front
+    400034: mirror_obj
+    400036: //RootNode
+    400038: Seat_cushion_L
+    400040: Seat_cushion_R
+    400042: Seat_L_Front
+    400044: Seat_R_Front
+    400046: Seatbody_L_Front
+    400048: Seatbody_R_Front
+    400050: Steering_wheel_base
+    400052: Steering_wheel_gro
+    2300000: car_interior_parts
+    2300002: door_L_Back_obj_L
+    2300004: door_L_Front_obj_L
+    2300006: door_R_Back_obj_L
+    2300008: door_R_Front_obj_L
+    2300010: head_rest_L_Front
+    2300012: head_rest_R_Front
+    2300014: Lazyback_L
+    2300016: Lazyback_R
+    2300018: mirror_obj
+    2300020: Seat_cushion_L
+    2300022: Seat_cushion_R
+    2300024: Steering_wheel_base
+    3300000: car_interior_parts
+    3300002: door_L_Back_obj_L
+    3300004: door_L_Front_obj_L
+    3300006: door_R_Back_obj_L
+    3300008: door_R_Front_obj_L
+    3300010: head_rest_L_Front
+    3300012: head_rest_R_Front
+    3300014: Lazyback_L
+    3300016: Lazyback_R
+    3300018: mirror_obj
+    3300020: Seat_cushion_L
+    3300022: Seat_cushion_R
+    3300024: Steering_wheel_base
+    4300000: car_interior_parts
+    4300002: door_L_Front_obj_L
+    4300004: door_L_Back_obj_L
+    4300006: door_R_Front_obj_L
+    4300008: door_R_Back_obj_L
+    4300010: head_rest_L_Front
+    4300012: Lazyback_L
+    4300014: Seat_cushion_L
+    4300016: head_rest_R_Front
+    4300018: Lazyback_R
+    4300020: Seat_cushion_R
+    4300022: mirror_obj
+    4300024: Steering_wheel_base
+    9500000: //RootNode
+  materials:
+    importMaterials: 0
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleRotations: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+  importAnimation: 0
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

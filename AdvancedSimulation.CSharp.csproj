@@ -89,7 +89,6 @@
     <Compile Include="Assets\Scripts\Business\System\Car\Interface\ISteering.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\Interface\IWheel.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\ScriptBase.cs" />
-    <Compile Include="Assets\Scripts\Business\System\Car\ShowAttr.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\SteeringSystem.cs" />
     <Compile Include="Assets\Scripts\Business\System\Car\Wheel.cs" />
     <Compile Include="Assets\Scripts\Business\System\Input\KeyInputManager.cs" />

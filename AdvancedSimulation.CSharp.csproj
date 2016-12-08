@@ -62,6 +62,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Examples\ImpactBounds\ImpactBounds.cs" />
+    <Compile Include="Assets\Examples\TextureScale\TextureScale.cs" />
     <Compile Include="Assets\Scripts\Business\Core\CarStatus.cs" />
     <Compile Include="Assets\Scripts\Business\Core\GameManager.cs" />
     <Compile Include="Assets\Scripts\Business\Core\Global.cs" />

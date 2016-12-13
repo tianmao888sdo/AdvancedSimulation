@@ -1,74 +1,171 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class ImpactBounds : MonoBehaviour {
+/// <summary>
+/// 地图旋转方案，要求能旋转位移，移动相机，地图要围绕相机中心点旋转显示
+/// </summary>
+public class ImpactBounds : MonoBehaviour
+{
+    public Camera mainCamera;
 
-    [SerializeField]
-    private Camera rotateCamera;
-    [SerializeField]
-    private float angle;
     /// <summary>
-    /// 摄像机相对于自己的位移量，原始位置为世界00点
+    /// 相机坐标系在世界中累计移动的向量
     /// </summary>
-    [SerializeField]
-    private Vector3 move=Vector3.zero;
-    [SerializeField]
-    private float mapWidth = 5;
-    [SerializeField]
-    private float mapHeight = 5;
+    public Vector3 worldMove;
 
-    Vector3 topLeft;
-    Vector3 topRight;
-    Vector3 bottomLeft;
-    Vector3 bottomRight;
+    /// <summary>
+    /// 相机相对世界的累计旋转角度
+    /// </summary>
+    public float totalAngle;
 
-    [SerializeField]
-    private Vector3[] temp=new  Vector3[4];
-    [SerializeField]
-    private Vector3 cameraPos;
+    /// <summary>
+    /// 还原点
+    /// </summary>
+    private Vector3 preWorldMove;
 
-    //Position 沿y轴增加5个单位，绕y轴旋转45度，缩放2倍
-    //m1.SetTRS(Vector3.up* 5, Quaternion.Euler(Vector3.up* 45.0f), Vector3.one* 2.0f);
-    // 也可以使用如下静态方法设置m1变换
-    //m1 = Matrix4x4.TRS(Vector3.up * 5, Quaternion.Euler(Vector3.up * 45.0f), Vector3.one * 2.0f);
-    //v2 = m1.MultiplyPoint3x4(v1);
-
-    private Matrix4x4 m=new Matrix4x4();
+    /// <summary>
+    /// 还原角度
+    /// </summary>
+    private float preTotalAngle;
 
 
+    //地图宽高
+    public float mapWidth = 0;
+    public float mapHeight = 0;
+
+    /// <summary>
+    /// 4至点坐标
+    /// </summary>
+    public Vector3 topLeft;
+    public Vector3 topRgiht;
+    public Vector3 bottomLeft;
+    public Vector3 bottomRight;
+
+    /// <summary>
+    /// 保存变换后的4至点坐标
+    /// </summary>
+    private Vector3[] sides = new Vector3[4];
+
+    /// <summary>
+    /// 相机实际旋转矩阵
+    /// </summary>
+    public Matrix4x4 cameraM = Matrix4x4.zero;
+    /// <summary>
+    /// 相对相机坐标系的位移矩阵，把相机看成与世界坐标系一致的
+    /// </summary>
+    public Matrix4x4 moveM = Matrix4x4.zero;
+    /// <summary>
+    /// 相对相机坐标系的旋转矩阵，把相机看成与世界坐标系一致的
+    /// </summary>
+    public Matrix4x4 rotationM = Matrix4x4.zero;
+    /// <summary>
+    /// 相对相机坐标系的缩放矩阵，把相机看成与世界坐标系一致的
+    /// </summary>
+    public Matrix4x4 scaleM = Matrix4x4.zero;
+
+    private bool isMouseDown = false;
+    private Vector3 preMousePos;
 
     // Use this for initialization
-    void Start () {
-        Texture2D t = Resources.Load("TextureScale/1_1") as Texture2D;
-        Sprite s = Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0.5f, 0.5f));
-    }
-
-    /// <summary>
-    /// 根据相机自身旋转和相对自身的位移计算实际世界位移
-    /// </summary>
-    /// <param name="localMove">相对相机自身坐标系位移</param>
-    /// <param name="localAngle">相机坐标系相对世界y方向的z轴旋转角度</param>
-    /// <returns>世界坐标系位移</returns>
-    private Vector3 GetWorldMove(Vector3 localMove,float localAngle)
+    void Start()
     {
-        float moveX = localMove.y * Mathf.Sin(localAngle * Mathf.Deg2Rad)+ localMove.x * Mathf.Cos(localAngle * Mathf.Deg2Rad);
-        float moveY = localMove.y * Mathf.Sin((localAngle + 90) * Mathf.Deg2Rad) + localMove.x * Mathf.Cos((localAngle + 90) * Mathf.Deg2Rad);
-        return new Vector3(moveX, moveY, 0);
+        cameraM = moveM = rotationM = scaleM = getDefaultMatrix(); ;
+        topLeft = new Vector3(-mapWidth * 0.5f, mapHeight * 0.5f, 0);
+        topRgiht = new Vector3(mapWidth * 0.5f, mapHeight * 0.5f, 0);
+        bottomLeft = new Vector3(-mapWidth * 0.5f, -mapHeight * 0.5f, 0);
+        bottomRight = new Vector3(mapWidth * 0.5f, -mapHeight * 0.5f, 0);
+
+        sides[0] = topLeft;
+        sides[1] = topRgiht;
+        sides[2] = bottomLeft;
+        sides[3] = bottomRight;
     }
-
-    public Vector3 preMousePos=Vector3.zero;
-    public Vector3 preMouseMove = Vector3.zero;
-    public Vector3 mouseMoved= Vector3.zero;
-    public bool isMouseDown = false;
-
-
-    private Vector3 preCameraMoved;
-    public Vector3 cameraMoved = Vector3.zero;
-    public Vector3 cacheMouseMoved = Vector3.zero;
 
     void FixedUpdate()
     {
-        if(!isMouseDown)
+        float top = sides[0].y;
+        float bottom = sides[0].y;
+        float left = sides[0].x;
+        float right = sides[0].x;
+
+        for (int i = 1; i < 4; i++)
+        {
+            if (top < sides[i].y)
+                top = sides[i].y;
+
+            if (bottom > sides[i].y)
+                bottom = sides[i].y;
+
+            if (left > sides[i].x)
+                left = sides[i].x;
+
+            if (right < sides[i].x)
+                right = sides[i].x;
+        }
+
+        if (top < mainCamera.orthographicSize || bottom > -mainCamera.orthographicSize || right < mainCamera.orthographicSize || left > -mainCamera.orthographicSize)
+        {
+            //worldMove = preWorldMove;
+            //totalAngle = preTotalAngle;
+            //mainCamera.transform.position = new Vector3(worldMove.x, worldMove.y, -10);
+            //mainCamera.transform.localRotation = Quaternion.AngleAxis(totalAngle, -Vector3.forward);
+            Debug.Log(1111111111111);
+            return;
+        }
+
+        preWorldMove = worldMove;
+        preTotalAngle = totalAngle;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+        if (isMouseDown)
+        {
+            if (Input.GetMouseButtonUp(0))
+            {
+                isMouseDown = false;
+                return;
+            }
+
+            if (Input.mousePosition != preMousePos)
+            {
+                Vector3 deltaMove = (Input.mousePosition - preMousePos) / (Screen.width * 0.5f);
+                //因为是从原点到z轴正方向看是顺时针，但实际在z轴正方向看是逆时针，所以-angle为我们所要的正时针旋转矩阵所要角度
+                cameraM = getZRotationMatrix(cameraM, -totalAngle);
+                worldMove += cameraM.MultiplyPoint(deltaMove);
+                //计算相机在世界中实际位移
+                mainCamera.transform.position = new Vector3(worldMove.x, worldMove.y, -10);
+                //地图相对相机坐标系的移动矩阵，与鼠标拖拽方向相反
+                moveM = getXYMoveMatrix(moveM, -deltaMove);
+
+                //每次对4至点做新的位移变换
+                sides[0] = moveM.MultiplyPoint(sides[0]);
+                sides[1] = moveM.MultiplyPoint(sides[1]);
+                sides[2] = moveM.MultiplyPoint(sides[2]);
+                sides[3] = moveM.MultiplyPoint(sides[3]);
+
+                preMousePos = Input.mousePosition;
+
+            }
+
+            if (Input.GetAxis("Mouse ScrollWheel") != 0)
+            {
+                float deltaAngle = Input.GetAxis("Mouse ScrollWheel") * 10;
+                totalAngle += deltaAngle;
+                //计算相机在世界中实际旋转
+                mainCamera.transform.localRotation = Quaternion.AngleAxis(totalAngle, -Vector3.forward);
+                //地图相对相机的逆旋转矩阵
+                rotationM = getZRotationMatrix(rotationM, deltaAngle);
+
+                sides[0] = rotationM.MultiplyPoint(sides[0]);
+                sides[1] = rotationM.MultiplyPoint(sides[1]);
+                sides[2] = rotationM.MultiplyPoint(sides[2]);
+                sides[3] = rotationM.MultiplyPoint(sides[3]);
+            }
+        }
+        else
         {
             if (Input.GetMouseButtonDown(0))
             {
@@ -76,88 +173,60 @@ public class ImpactBounds : MonoBehaviour {
                 preMousePos = Input.mousePosition;
             }
         }
-        else
-        {
-            if(Input.GetMouseButtonUp(0))
-            {
-                preMousePos = Vector3.zero;
-                isMouseDown = false;
-                mouseMoved = Vector3.zero;
-                return;
-            }
-
-            if(Input.mousePosition!=preMousePos)
-            {
-                mouseMoved = Input.mousePosition - preMousePos;
-                cacheMouseMoved += mouseMoved * 0.1f;
-                cameraMoved += GetWorldMove(mouseMoved*0.1f, angle);
-                preMousePos = Input.mousePosition;
-            }
-            else
-            {
-                mouseMoved = Vector3.zero;
-            }
-        }
     }
-	
-	// Update is called once per frame
-	void Update ()
+
+    /// <summary>
+    /// 获取对角单位矩阵
+    /// </summary>
+    /// <returns></returns>
+    private Matrix4x4 getDefaultMatrix()
     {
-        topLeft = new Vector3(-mapWidth * 0.5f, mapHeight * 0.5f, 0)- cacheMouseMoved;
-        topRight=new Vector3(mapWidth * 0.5f, mapHeight * 0.5f, 0) - cacheMouseMoved;
-        bottomLeft = new Vector3(-mapWidth * 0.5f, -mapHeight * 0.5f, 0) - cacheMouseMoved;
-        bottomRight = new Vector3(mapWidth * 0.5f, -mapHeight * 0.5f, 0) - cacheMouseMoved;
-
-        m.SetTRS(Vector3.zero, Quaternion.AngleAxis(-angle, -Vector3.forward), Vector3.one);
-
-        temp[0] = m.MultiplyPoint3x4(topLeft);
-        temp[1] = m.MultiplyPoint3x4(topRight);
-        temp[2] = m.MultiplyPoint3x4(bottomLeft);
-        temp[3] = m.MultiplyPoint3x4(bottomRight);
-        float top =temp[0].y, left= temp[0].x, right= temp[0].x, bottom= temp[0].y;
-
-        for(int i=1;i<4;i++)
-        {
-            if (temp[i].x >= right)
-            {
-                right = temp[i].x;
-            }
-
-            if (temp[i].y >= top)
-            {
-                top = temp[i].y;
-            }
-
-            if (temp[i].x <= left)
-            {
-                left = temp[i].x;
-            }
-
-            if (temp[i].y <= bottom)
-            {
-                bottom = temp[i].y;
-            }
-        }
-
-        if (cacheMouseMoved.x - rotateCamera.orthographicSize < left || cacheMouseMoved.x+rotateCamera.orthographicSize > right)
-        {
-            cameraMoved = preCameraMoved;
-            cacheMouseMoved = preMouseMove;
-            return;
-        }
-
-        if (cacheMouseMoved.y - rotateCamera.orthographicSize < bottom || cacheMouseMoved.y + rotateCamera.orthographicSize > top)
-        {
-            cameraMoved = preCameraMoved;
-            cacheMouseMoved = preMouseMove;
-            return;
-        }
-
-        preCameraMoved = cameraMoved;
-        preMouseMove = cacheMouseMoved;
-        rotateCamera.transform.position =new Vector3(cameraMoved.x, cameraMoved.y,-10);
-        rotateCamera.transform.localRotation = Quaternion.AngleAxis(angle, -Vector3.forward);
+        Matrix4x4 m = Matrix4x4.zero;
+        m.m00 = m.m11 = m.m22 = m.m33 = 1;
+        return m;
     }
 
- 
+    /// <summary>
+    /// 获取沿z轴逆时针旋转的矩阵
+    /// </summary>
+    /// <param name="m"></param>
+    /// <param name="angle">沿原点到z轴正半轴的顺时针角度</param>
+    /// <returns></returns>
+    private Matrix4x4 getZRotationMatrix(Matrix4x4 m, float angle)
+    {
+        m.m00 = Mathf.Cos(angle * Mathf.Deg2Rad);
+        m.m10 = Mathf.Sin(angle * Mathf.Deg2Rad);
+        m.m01 = -Mathf.Sin(angle * Mathf.Deg2Rad);
+        m.m11 = Mathf.Cos(angle * Mathf.Deg2Rad);
+        m.m22 = m.m33 = 1;
+        return m;
+    }
+
+    /// <summary>
+    /// 返回沿x,y轴移动的矩阵
+    /// </summary>
+    /// <param name="m"></param>
+    /// <param name="move"></param>
+    /// <returns></returns>
+    private Matrix4x4 getXYMoveMatrix(Matrix4x4 m, Vector3 move)
+    {
+        m.m00 = m.m11 = m.m22 = m.m33 = 1;
+        m.m03 = move.x;
+        m.m13 = move.y;
+        return m;
+    }
+
+    /// <summary>
+    /// 沿x,y轴统一缩放矩阵
+    /// </summary>
+    /// <param name="m"></param>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <returns></returns>
+    private Matrix4x4 getXYScaleMatrix(Matrix4x4 m, float scale)
+    {
+        m.m00 = m.m11 = scale;
+        m.m22 = m.m33 = 1;
+        return m;
+    }
 }

@@ -18,17 +18,6 @@ public class ImpactBounds : MonoBehaviour
     /// </summary>
     public float totalAngle;
 
-    /// <summary>
-    /// 还原点
-    /// </summary>
-    private Vector3 preWorldMove;
-
-    /// <summary>
-    /// 还原角度
-    /// </summary>
-    private float preTotalAngle;
-
-
     //地图宽高
     public float mapWidth = 0;
     public float mapHeight = 0;
@@ -44,20 +33,41 @@ public class ImpactBounds : MonoBehaviour
     /// <summary>
     /// 保存变换后的4至点坐标
     /// </summary>
-    private Vector3[] sides = new Vector3[4];
+    public Vector3[] sides = new Vector3[4];
+
+    /// <summary>
+    /// 记录可移动范围
+    /// </summary>
+    public float top;
+    public float bottom ;
+    public float left;
+    public float right;
 
     /// <summary>
     /// 相机实际旋转矩阵
     /// </summary>
     public Matrix4x4 cameraM = Matrix4x4.zero;
+
     /// <summary>
     /// 相对相机坐标系的位移矩阵，把相机看成与世界坐标系一致的
     /// </summary>
     public Matrix4x4 moveM = Matrix4x4.zero;
+
+    /// <summary>
+    /// 累计的移动矩阵
+    /// </summary>
+    public Matrix4x4 totalMoveM = Matrix4x4.zero;
+
     /// <summary>
     /// 相对相机坐标系的旋转矩阵，把相机看成与世界坐标系一致的
     /// </summary>
     public Matrix4x4 rotationM = Matrix4x4.zero;
+
+    /// <summary>
+    /// 累计旋转矩阵
+    /// </summary>
+    public Matrix4x4 totalRotationM = Matrix4x4.zero;
+
     /// <summary>
     /// 相对相机坐标系的缩放矩阵，把相机看成与世界坐标系一致的
     /// </summary>
@@ -69,7 +79,7 @@ public class ImpactBounds : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        cameraM = moveM = rotationM = scaleM = getDefaultMatrix(); ;
+        totalMoveM=totalRotationM = cameraM = moveM = rotationM = scaleM = getDefaultMatrix();
         topLeft = new Vector3(-mapWidth * 0.5f, mapHeight * 0.5f, 0);
         topRgiht = new Vector3(mapWidth * 0.5f, mapHeight * 0.5f, 0);
         bottomLeft = new Vector3(-mapWidth * 0.5f, -mapHeight * 0.5f, 0);
@@ -81,12 +91,40 @@ public class ImpactBounds : MonoBehaviour
         sides[3] = bottomRight;
     }
 
+    /// <summary>
+    /// 绘制边框
+    /// </summary>
+    void OnDrawGizmos()
+    {
+        //范围框永远是相对相机原始中心点旋转的，只跟旋转有关，上下左右对称
+        float w = Mathf.Abs(left - right)*0.5f;
+        float h = Mathf.Abs(top - bottom)*0.5f;
+
+        Vector2 t_topLeft = new Vector2(-w, h);
+        Vector2 t_topRight = new Vector2(w, h);
+        Vector2 t_bottomLeft = new Vector2(-w, -h);
+        Vector2 t_bottomRight = new Vector2(w, -h);
+
+        //用相机的逆矩阵返回的是世界真正的坐标
+        Matrix4x4 M = totalRotationM.inverse;
+
+        t_topLeft = M.MultiplyPoint(t_topLeft);
+        t_topRight = M.MultiplyPoint(t_topRight);
+        t_bottomLeft = M.MultiplyPoint(t_bottomLeft);
+        t_bottomRight = M.MultiplyPoint(t_bottomRight);
+
+        Gizmos.DrawLine(t_topLeft, t_topRight);
+        Gizmos.DrawLine(t_topRight, t_bottomRight);
+        Gizmos.DrawLine(t_bottomRight, t_bottomLeft);
+        Gizmos.DrawLine(t_bottomLeft, t_topLeft);
+    }
+
     void FixedUpdate()
     {
-        float top = sides[0].y;
-        float bottom = sides[0].y;
-        float left = sides[0].x;
-        float right = sides[0].x;
+        top = sides[0].y;
+        bottom = sides[0].y;
+        left = sides[0].x;
+        right = sides[0].x;
 
         for (int i = 1; i < 4; i++)
         {
@@ -103,24 +141,54 @@ public class ImpactBounds : MonoBehaviour
                 right = sides[i].x;
         }
 
-        if (top < mainCamera.orthographicSize || bottom > -mainCamera.orthographicSize || right < mainCamera.orthographicSize || left > -mainCamera.orthographicSize)
+        Vector3 t_moveBack = Vector3.zero;
+
+        if (top < mainCamera.orthographicSize)
         {
-            //worldMove = preWorldMove;
-            //totalAngle = preTotalAngle;
-            //mainCamera.transform.position = new Vector3(worldMove.x, worldMove.y, -10);
-            //mainCamera.transform.localRotation = Quaternion.AngleAxis(totalAngle, -Vector3.forward);
-            Debug.Log(1111111111111);
-            return;
+            t_moveBack.y = top - mainCamera.orthographicSize;
         }
 
-        preWorldMove = worldMove;
-        preTotalAngle = totalAngle;
+        if(bottom > -mainCamera.orthographicSize)
+        {
+            t_moveBack.y = bottom + mainCamera.orthographicSize;
+        }
+
+        if(right < mainCamera.orthographicSize * mainCamera.aspect)
+        {
+            t_moveBack.x = right - mainCamera.orthographicSize * mainCamera.aspect;
+        }
+
+        if(left > -mainCamera.orthographicSize * mainCamera.aspect)
+        {
+            t_moveBack.x = left + mainCamera.orthographicSize * mainCamera.aspect;
+        }
+
+        if(t_moveBack != Vector3.zero)
+        {
+            //相机向相反方向移动，地图相当于朝相机方向移动
+            moveM = getXYMoveMatrix(moveM, -t_moveBack);
+            //每次对4至点做新的位移变换
+            totalMoveM *= moveM;
+
+            sides[0] = moveM.MultiplyPoint(sides[0]);
+            sides[1] = moveM.MultiplyPoint(sides[1]);
+            sides[2] = moveM.MultiplyPoint(sides[2]);
+            sides[3] = moveM.MultiplyPoint(sides[3]);
+
+            worldMove += totalRotationM.inverse.MultiplyPoint(t_moveBack);
+
+            Debug.Log(11111111);
+        }
+
+        //计算相机在世界中实际位移
+        mainCamera.transform.position = new Vector3(worldMove.x, worldMove.y, -10);
+        //计算相机在世界中实际旋转
+        mainCamera.transform.localRotation = Quaternion.AngleAxis(totalAngle, -Vector3.forward);
     }
 
     // Update is called once per frame
     void Update()
     {
-
         if (isMouseDown)
         {
             if (Input.GetMouseButtonUp(0))
@@ -131,14 +199,15 @@ public class ImpactBounds : MonoBehaviour
 
             if (Input.mousePosition != preMousePos)
             {
-                Vector3 deltaMove = (Input.mousePosition - preMousePos) / (Screen.width * 0.5f);
+                Vector3 deltaMove = (Input.mousePosition - preMousePos);
+                deltaMove.y/=(Screen.height * 0.5f / mainCamera.orthographicSize);
+                deltaMove.x /= (Screen.height* mainCamera.aspect * 0.5f / mainCamera.orthographicSize);
                 //因为是从原点到z轴正方向看是顺时针，但实际在z轴正方向看是逆时针，所以-angle为我们所要的正时针旋转矩阵所要角度
-                cameraM = getZRotationMatrix(cameraM, -totalAngle);
-                worldMove += cameraM.MultiplyPoint(deltaMove);
-                //计算相机在世界中实际位移
-                mainCamera.transform.position = new Vector3(worldMove.x, worldMove.y, -10);
+                worldMove += totalRotationM.inverse.MultiplyPoint(deltaMove);
+
                 //地图相对相机坐标系的移动矩阵，与鼠标拖拽方向相反
                 moveM = getXYMoveMatrix(moveM, -deltaMove);
+                totalMoveM *= moveM;
 
                 //每次对4至点做新的位移变换
                 sides[0] = moveM.MultiplyPoint(sides[0]);
@@ -154,10 +223,9 @@ public class ImpactBounds : MonoBehaviour
             {
                 float deltaAngle = Input.GetAxis("Mouse ScrollWheel") * 10;
                 totalAngle += deltaAngle;
-                //计算相机在世界中实际旋转
-                mainCamera.transform.localRotation = Quaternion.AngleAxis(totalAngle, -Vector3.forward);
                 //地图相对相机的逆旋转矩阵
                 rotationM = getZRotationMatrix(rotationM, deltaAngle);
+                totalRotationM *= rotationM;
 
                 sides[0] = rotationM.MultiplyPoint(sides[0]);
                 sides[1] = rotationM.MultiplyPoint(sides[1]);

@@ -3,6 +3,7 @@ using System.Collections;
 
 /// <summary>
 /// 地图旋转方案，要求能旋转位移，移动相机，地图要围绕相机中心点旋转显示
+/// 应该还需要增加一个相机初始旋转矩阵，适应各种方向的地图
 /// </summary>
 public class ImpactBounds : MonoBehaviour
 {
@@ -23,35 +24,56 @@ public class ImpactBounds : MonoBehaviour
     public float mapHeight = 0;
 
     /// <summary>
+    /// 相机深度
+    /// </summary>
+    public float cameraFar = 10f;
+
+    /// <summary>
     /// 4至点坐标
     /// </summary>
-    public Vector3 topLeft;
-    public Vector3 topRgiht;
-    public Vector3 bottomLeft;
-    public Vector3 bottomRight;
+    [SerializeField]
+    private Vector3 topLeft;
+    [SerializeField]
+    private Vector3 topRgiht;
+    [SerializeField]
+    private Vector3 bottomLeft;
+    [SerializeField]
+    private Vector3 bottomRight;
 
     /// <summary>
     /// 保存变换后的4至点坐标
     /// </summary>
-    public Vector3[] sides = new Vector3[4];
+    [SerializeField]
+    private Vector3[] sides = new Vector3[4];
 
     /// <summary>
     /// 记录可移动范围，相机坐标系
     /// </summary>
-    public float top;
-    public float bottom ;
-    public float left;
-    public float right;
+    [SerializeField]
+    private float top;
+    [SerializeField]
+    private float bottom ;
+    [SerializeField]
+    private float left;
+    [SerializeField]
+    private float right;
+
+    /// <summary>
+    /// 相机原始偏移矩阵
+    /// </summary>
+    private Matrix4x4 cameraM = Matrix4x4.zero;
 
     /// <summary>
     /// 累计旋转矩阵
     /// </summary>
-    public Matrix4x4 totalRotationM = Matrix4x4.zero;
+    [SerializeField]
+    private Matrix4x4 totalRotationM = Matrix4x4.zero;
 
     /// <summary>
     /// 地图相对于相机坐标系的总的变换，包含旋转和位移变换
     /// </summary>
-    public Matrix4x4 totalM = Matrix4x4.zero;
+    [SerializeField]
+    private Matrix4x4 totalM = Matrix4x4.zero;
 
     /// <summary>
     /// 相对相机坐标系的位移矩阵，把相机看成与世界坐标系一致的
@@ -64,11 +86,6 @@ public class ImpactBounds : MonoBehaviour
     private Matrix4x4 rotationM = Matrix4x4.zero;
 
     /// <summary>
-    /// 相对相机坐标系的缩放矩阵，把相机看成与世界坐标系一致的
-    /// </summary>
-    private Matrix4x4 scaleM = Matrix4x4.zero;
-
-    /// <summary>
     /// 越界颜色，越出为红色，否则为绿色
     /// </summary>
     private Color warningColor=Color.green;
@@ -79,7 +96,8 @@ public class ImpactBounds : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        totalM = totalRotationM = moveM = rotationM = scaleM = getDefaultMatrix();
+        cameraM=totalM = totalRotationM = moveM = rotationM = getDefaultMatrix();
+        cameraM = getXRotationMatrix(cameraM, 90f);
         topLeft = new Vector3(-mapWidth * 0.5f, mapHeight * 0.5f, 0);
         topRgiht = new Vector3(mapWidth * 0.5f, mapHeight * 0.5f, 0);
         bottomLeft = new Vector3(-mapWidth * 0.5f, -mapHeight * 0.5f, 0);
@@ -97,10 +115,8 @@ public class ImpactBounds : MonoBehaviour
     /// </summary>
     private void MapSelfAdapt(float totalAngle)
     {
-        MoveAndRotatCamera(Vector3.zero,totalAngle);
-        totalRotationM = getZRotationMatrix(totalRotationM, totalAngle);
-        totalM = totalRotationM * totalM;//一定要左乘
-        MoveAndRotatSides(totalM);
+        SetRotation(totalAngle);
+        MoveAndRotatCamera(Vector3.zero, totalAngle, totalM);
         mainCamera.orthographicSize=GetMapHeight() * 0.5f;
     }
 
@@ -116,24 +132,55 @@ public class ImpactBounds : MonoBehaviour
     }
 
     /// <summary>
-    /// 移动相机，并旋转相机到指定角度
+    /// 设置移动值
     /// </summary>
-    /// <param name="totalMove">相机在世界的总移动</param>
-    /// <param name="totalAngle">相机绕自身旋转的总角度，延z轴的负轴旋转</param>
-    private void MoveAndRotatCamera(Vector3 totalMove,float totalAngle)
+    /// <param name="deltaMove"></param>
+    private void SetMove(Vector3 deltaMove)
     {
-        //计算相机在世界中实际位移
-        mainCamera.transform.position = new Vector3(worldMove.x, worldMove.y, -10);
-        //计算相机在世界中实际旋转
-        mainCamera.transform.localRotation = Quaternion.AngleAxis(totalAngle, -Vector3.forward);
+        worldMove += totalRotationM.inverse.MultiplyPoint(deltaMove);
+        //地图相对相机坐标系的移动矩阵，与鼠标拖拽方向相反
+        moveM = getXYMoveMatrix(moveM, -deltaMove);
+        totalM = moveM * totalM;//一定要左乘
     }
 
     /// <summary>
-    /// 变换四至点，从相机坐标系到世界坐标系
+    /// 设置旋转值
     /// </summary>
-    /// <param name="m">相机相对世界变换的逆变换</param>
-    private void MoveAndRotatSides(Matrix4x4 m)
+    private void SetRotation(float deltaAngle)
     {
+        //计算相机相对自身的旋转
+        totalAngle += deltaAngle;
+        totalRotationM = getZRotationMatrix(totalRotationM, totalAngle);
+        //地图相对相机的逆旋转矩阵
+        rotationM = getZRotationMatrix(rotationM, deltaAngle);
+        totalM = rotationM * totalM;//一定要左乘
+    }
+
+    /// <summary>
+    /// 围绕鼠标位置缩放
+    /// </summary>
+    /// <param name="deltaScale"></param>
+    private void SetScale(float deltaScale)
+    {
+        float y = 2f*(Input.mousePosition.y - 0.5f * Screen.height) * deltaScale/Screen.height;
+        float x = 2f * (Input.mousePosition.x - 0.5f * Screen.width) * mainCamera.aspect * deltaScale / Screen.width;
+        mainCamera.orthographicSize += deltaScale;
+        SetMove(-new Vector3(x, y, 0));
+    }
+
+    /// <summary>
+    /// 执行移动相机，并旋转相机到指定角度
+    /// </summary>
+    /// <param name="totalMove">相机在世界的总移动</param>
+    /// <param name="totalAngle">相机绕自身旋转的总角度，延z轴的负轴旋转</param
+    /// <param name="m">相机相对世界变换的逆变换</param>
+    private void MoveAndRotatCamera(Vector3 totalMove,float totalAngle,Matrix4x4 m)
+    {
+        //计算相机在世界中实际位移
+        mainCamera.transform.localPosition = new Vector3(worldMove.x, cameraFar, worldMove.y);
+        //计算相机在世界中实际旋转
+        mainCamera.transform.localRotation = Quaternion.Euler(90,0f,-totalAngle);
+
         sides[0] = m.MultiplyPoint(topLeft);
         sides[1] = m.MultiplyPoint(topRgiht);
         sides[2] = m.MultiplyPoint(bottomLeft);
@@ -248,55 +295,25 @@ public class ImpactBounds : MonoBehaviour
             if (Input.mousePosition != preMousePos)
             {
                 Vector3 deltaMove = MouseToWorld(Input.mousePosition - preMousePos);
-                //计算相机在世界坐标系的位移,只有用相机的逆矩阵，才能让相机的移动方向跟鼠标的象限一致
-                worldMove += totalRotationM.inverse.MultiplyPoint(deltaMove);
-                //地图相对相机坐标系的移动矩阵，与鼠标拖拽方向相反
-                moveM = getXYMoveMatrix(moveM, -deltaMove);
-                totalM = moveM* totalM;//一定要左乘
-
+                SetMove(-deltaMove);
                 preMousePos = Input.mousePosition;
             }
 
             if (Input.GetAxis("Mouse ScrollWheel") != 0)
             {
                 float deltaAngle = Input.GetAxis("Mouse ScrollWheel") * 10;
-                //计算相机相对自身的旋转
-                totalAngle += deltaAngle;
-                totalRotationM = getZRotationMatrix(totalRotationM, totalAngle);
-                //地图相对相机的逆旋转矩阵
-                rotationM = getZRotationMatrix(rotationM, deltaAngle);
-                totalM = rotationM* totalM;//一定要左乘
+                SetRotation(deltaAngle);
             }
 
             Vector3 scale = Vector3.zero;
 
-            if(Input.GetKey(KeyCode.A))//放大
+            if (Input.GetKey(KeyCode.A))//放大
             {
-                Vector3 mousePos = new Vector3(Input.mousePosition.x - Screen.width * 0.5f , Input.mousePosition.y - Screen.height * 0.5f);
-                mousePos= MouseToWorld(mousePos);
-
-                scale.y = 0.1f* mousePos.y;
-                scale.x = 0.1f*mousePos.x;
-
-                worldMove += totalRotationM.inverse.MultiplyPoint(-scale);
-                moveM = getXYMoveMatrix(moveM, scale);
-                totalM = moveM * totalM;//一定要左乘
-
-                mainCamera.orthographicSize += 0.1f;
+                SetScale(Time.deltaTime);
             }
-            else if(Input.GetKey(KeyCode.B))//缩小
+            else if (Input.GetKey(KeyCode.B))//缩小
             {
-                Vector3 mousePos = new Vector3(Input.mousePosition.x - Screen.width * 0.5f, Input.mousePosition.y - Screen.height * 0.5f);
-                mousePos = MouseToWorld(mousePos);
-
-                scale.y = 0.1f * mousePos.y;
-                scale.x = 0.1f * mousePos.x;
-
-                worldMove += totalRotationM.inverse.MultiplyPoint(scale);
-                moveM = getXYMoveMatrix(moveM, -scale);
-                totalM = moveM * totalM;//一定要左乘
-
-                mainCamera.orthographicSize -= 0.1f;
+                SetScale(-Time.deltaTime);
             }
         }
         else
@@ -312,25 +329,20 @@ public class ImpactBounds : MonoBehaviour
     void LateUpdate()
     {
         //四至点转化成相机坐标系
-        MoveAndRotatSides(totalM);
+        MoveAndRotatCamera(worldMove, totalAngle, totalM);
 
         Vector3 t_moveBack;
 
         if (!IsRangeValid(out t_moveBack))
         {
-            //相机向相反方向移动，地图相当于朝相机方向移动
-            moveM = getXYMoveMatrix(moveM, -t_moveBack);
-            totalM = moveM * totalM;//一定要左乘
-            MoveAndRotatSides(totalM);
-            worldMove += totalRotationM.inverse.MultiplyPoint(t_moveBack);
+            SetMove(t_moveBack);
+            MoveAndRotatCamera(worldMove, totalAngle, totalM);
             warningColor = Color.red;
         }
         else
         {
             warningColor = Color.green;
         }
-
-        MoveAndRotatCamera(worldMove, totalAngle);
     }
 
     /// <summary>
@@ -354,16 +366,28 @@ public class ImpactBounds : MonoBehaviour
         t_bottomRight = totalRotationM.inverse.MultiplyPoint(t_bottomRight);
 
         Gizmos.color = warningColor;
-        Gizmos.DrawLine(t_topLeft, t_topRight);
-        Gizmos.DrawLine(t_topRight, t_bottomRight);
-        Gizmos.DrawLine(t_bottomRight, t_bottomLeft);
-        Gizmos.DrawLine(t_bottomLeft, t_topLeft);
+        //Gizmos.DrawLine(t_topLeft, t_topRight);
+        //Gizmos.DrawLine(t_topRight, t_bottomRight);
+        //Gizmos.DrawLine(t_bottomRight, t_bottomLeft);
+        //Gizmos.DrawLine(t_bottomLeft, t_topLeft);
+
+        //Gizmos.color = Color.blue;
+        //Gizmos.DrawLine(sides[0], sides[1]);
+        //Gizmos.DrawLine(sides[1], sides[3]);
+        //Gizmos.DrawLine(sides[3], sides[2]);
+        //Gizmos.DrawLine(sides[2], sides[0]);
+
+        Gizmos.DrawLine(new Vector3(t_topLeft.x,0, t_topLeft.y),new Vector3(t_topRight.x,0, t_topRight.y));
+        Gizmos.DrawLine(new Vector3(t_topRight.x, 0, t_topRight.y), new Vector3(t_bottomRight.x, 0, t_bottomRight.y));
+        Gizmos.DrawLine(new Vector3(t_bottomRight.x, 0, t_bottomRight.y), new Vector3(t_bottomLeft.x, 0, t_bottomLeft.y));
+        Gizmos.DrawLine(new Vector3(t_bottomLeft.x, 0, t_bottomLeft.y), new Vector3(t_topLeft.x, 0, t_topLeft.y));
 
         Gizmos.color = Color.blue;
-        Gizmos.DrawLine(sides[0], sides[1]);
-        Gizmos.DrawLine(sides[1], sides[3]);
-        Gizmos.DrawLine(sides[3], sides[2]);
-        Gizmos.DrawLine(sides[2], sides[0]);
+
+        Gizmos.DrawLine(new Vector3(sides[0].x, 0, sides[0].y), new Vector3(sides[1].x, 0, sides[1].y));
+        Gizmos.DrawLine(new Vector3(sides[1].x, 0, sides[1].y), new Vector3(sides[3].x, 0, sides[3].y));
+        Gizmos.DrawLine(new Vector3(sides[3].x, 0, sides[3].y), new Vector3(sides[2].x, 0, sides[2].y));
+        Gizmos.DrawLine(new Vector3(sides[2].x, 0, sides[2].y), new Vector3(sides[0].x, 0, sides[0].y));
     }
 
     /// <summary>
@@ -385,13 +409,26 @@ public class ImpactBounds : MonoBehaviour
     /// <returns></returns>
     private Matrix4x4 getZRotationMatrix(Matrix4x4 m, float angle)
     {
-        m.m00 = Mathf.Cos(angle * Mathf.Deg2Rad);
         m.m10 = Mathf.Sin(angle * Mathf.Deg2Rad);
         m.m01 = -Mathf.Sin(angle * Mathf.Deg2Rad);
-        m.m11 = Mathf.Cos(angle * Mathf.Deg2Rad);
-        m.m22 = m.m33 = 1;
+        m.m00 =m.m11 = Mathf.Cos(angle * Mathf.Deg2Rad);
         return m;
     }
+
+    /// <summary>
+    /// 获取沿x轴旋转的矩阵
+    /// </summary>
+    /// <param name="m"></param>
+    /// <param name="angle"></param>
+    /// <returns></returns>
+    private Matrix4x4 getXRotationMatrix(Matrix4x4 m, float angle)
+    {
+        m.m12= -Mathf.Sin(angle * Mathf.Deg2Rad);
+        m.m21= Mathf.Sin(angle * Mathf.Deg2Rad);
+        m.m11 = m.m22 = Mathf.Cos(angle * Mathf.Deg2Rad);
+        return m;
+    }
+
 
     /// <summary>
     /// 返回沿x,y轴移动的矩阵

@@ -45,7 +45,7 @@ public class BuildAssetsBase : Editor
     /// 资源路径
     /// </summary>
     /// <returns></returns>
-    protected virtual string GetResPath(){ return "Assets/Reources";}
+    protected virtual string GetResPath(){ return "Assets/Resources"; }
 
     /// <summary>
     /// 目标路径

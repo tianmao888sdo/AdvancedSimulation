@@ -1,7 +1,6 @@
 ManifestFileVersion: 0
-CRC: 2607723154
 AssetBundleManifest:
   AssetBundleInfos:
     Info_0:
-      Name: car.prefab
+      Name: cube.prefab
       Dependencies: {}

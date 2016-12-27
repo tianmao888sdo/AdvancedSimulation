@@ -2,12 +2,15 @@
 using System.Collections;
 
 /// <summary>
-/// 地图旋转方案，要求能旋转位移，移动相机，地图要围绕相机中心点旋转显示
-/// 相机围绕鼠标位置缩放，跟随模式下，自动跟随小车，以小车在屏幕坐标系的位置为原点缩放，可以重置，但不会重置跟随状态
-/// 初始化时要自适应地图
-/// 应该还需要增加一个相机初始旋转矩阵，适应各种方向的地图
+/// 类主要功能：地图旋转方案，要求能旋转，移动相机，地图要围绕相机中心点旋转显示
+///             相机围绕鼠标位置缩放，跟随模式下，自动跟随小车，以小车在屏幕坐标系的位置为原点缩放，可以重置，但不会重置跟随状态
+///             初始化时要自适应地图
+/// 注意事项：应该还需要增加一个相机初始旋转矩阵，适应各种方向的地图
+/// 创建日期：2016/12/20
+/// 修改日期：2016/12/26
+/// 修改人：lijunfeng
 /// </summary>
-public class ImpactBounds : MonoBehaviour
+public sealed class ImpactBounds : MonoBehaviour
 {
     public enum FollowType
     {
@@ -16,43 +19,60 @@ public class ImpactBounds : MonoBehaviour
     }
 
     /// <summary>
-    /// 跟随方式
+    /// 速度倍率，用于调整放大后的各种速度
     /// </summary>
-    public FollowType followType = FollowType.Mouse;
-
-    public Camera mainCamera;
+    public float Rate = 100f;
 
     /// <summary>
-    /// 相机坐标系在世界中累计移动的向量
+    /// 跟随方式
     /// </summary>
-    public Vector3 worldMove;
+    [SerializeField]
+    private FollowType followType = FollowType.Mouse;
+
+    /// <summary>
+    /// 主摄像机
+    /// </summary>
+    [SerializeField]
+    private Camera mainCamera;
+
+    /// <summary>
+    /// 相机坐标系在世界坐标系中累计移动的向量
+    /// </summary>
+    [SerializeField]
+    private Vector3 worldMove;
 
     /// <summary>
     /// 相机相对世界的累计旋转角度
     /// </summary>
-    public float totalAngle;
+    [SerializeField]
+    private float totalAngle;
 
     /// <summary>
     /// 小车坐标
     /// </summary>
-    public Vector3 carPos;
+    [SerializeField]
+    private Vector3 carPos;
 
     /// <summary>
     /// 跟随时的速度
     /// </summary>
-    public float followSpeed = 1f;
+    [SerializeField]
+    private float followSpeed = 1f;
 
-    //地图宽高
-    public float mapWidth = 0;
-    public float mapHeight = 0;
+    //地图宽高（米)
+    [SerializeField]
+    private float mapWidth = 0;
+    [SerializeField]
+    private float mapHeight = 0;
 
     /// <summary>
     /// 相机深度
     /// </summary>
-    public float cameraFar = 10f;
+    [SerializeField]
+    private float cameraFar = 10f;
 
     /// <summary>
-    /// 4至点坐标
+    /// 地图4至点坐标
     /// </summary>
     [SerializeField]
     private Vector3 topLeft;
@@ -64,10 +84,15 @@ public class ImpactBounds : MonoBehaviour
     private Vector3 bottomRight;
 
     /// <summary>
-    /// 保存变换后的4至点坐标
+    /// 保存变换后的地图4至点坐标
     /// </summary>
     [SerializeField]
     private Vector3[] sides = new Vector3[4];
+
+    /// <summary>
+    /// 保存变换后的相机边界4至
+    /// </summary>
+    private Vector3[] cameraSize = new Vector3[4];
 
     /// <summary>
     /// 记录可移动范围，相机坐标系
@@ -82,7 +107,7 @@ public class ImpactBounds : MonoBehaviour
     private float right;
 
     /// <summary>
-    /// 保存初始值
+    /// 保存初始值，用于reset
     /// </summary>
     private float m_cachedTotalAngle;
 
@@ -125,6 +150,26 @@ public class ImpactBounds : MonoBehaviour
     /// </summary>
     private bool isFollowing = false;
 
+    /// <summary>
+    /// 小车在地图上的坐标
+    /// </summary>
+    public Vector3 CarPos { get { return carPos; } }
+
+    /// <summary>
+    /// 保存变换后的地图4至点坐标
+    /// </summary>
+    public Vector3[] Sides { get { return sides; } }
+
+    /// <summary>
+    /// 相机4至点在世界上的坐标
+    /// </summary>
+    public Vector3[] CameraSides { get { return cameraSize; } }
+
+    /// <summary>
+    /// 相机视野的一半
+    /// </summary>
+    public float CameraSize{get {return mainCamera==null?0:mainCamera.orthographicSize;}}
+
     // Use this for initialization
     void Start()
     {
@@ -139,7 +184,8 @@ public class ImpactBounds : MonoBehaviour
         sides[1] = topRgiht;
         sides[2] = bottomLeft;
         sides[3] = bottomRight;
-//        MapSelfAdapt();
+
+        MapSelfAdapt();
 
         m_cachedTotalAngle = totalAngle;
     }
@@ -150,7 +196,7 @@ public class ImpactBounds : MonoBehaviour
     private void MapSelfAdapt()
     {
         SetRotation(totalAngle);
-        MoveAndRotatCamera(Vector3.zero, totalAngle, totalM);
+        ApplyTotalMatrix(totalM);
         mainCamera.orthographicSize=GetMapHeight() * 0.5f;
     }
 
@@ -163,15 +209,11 @@ public class ImpactBounds : MonoBehaviour
         cameraM=totalM = getDefaultMatrix();
         cameraM = getXRotationMatrix(cameraM, 90f);
 
-        topLeft = new Vector3(-mapWidth * 0.5f, mapHeight * 0.5f, 0);
-        topRgiht = new Vector3(mapWidth * 0.5f, mapHeight * 0.5f, 0);
-        bottomLeft = new Vector3(-mapWidth * 0.5f, -mapHeight * 0.5f, 0);
-        bottomRight = new Vector3(mapWidth * 0.5f, -mapHeight * 0.5f, 0);
-
         sides[0] = topLeft;
         sides[1] = topRgiht;
         sides[2] = bottomLeft;
         sides[3] = bottomRight;
+
         worldMove = Vector3.zero;
         MapSelfAdapt();
     }
@@ -196,7 +238,7 @@ public class ImpactBounds : MonoBehaviour
         worldMove += totalRotationM.inverse.MultiplyPoint(deltaMove);
         //地图相对相机坐标系的移动矩阵，与鼠标拖拽方向相反
         moveM = getXYMoveMatrix(moveM, -deltaMove);
-        totalM = moveM * totalM;//一定要左乘
+        totalM = moveM * totalM;//一定要右乘
     }
 
     /// <summary>
@@ -217,7 +259,7 @@ public class ImpactBounds : MonoBehaviour
         totalRotationM = getZRotationMatrix(totalRotationM, totalAngle);
         //地图相对相机的逆旋转矩阵
         rotationM = getZRotationMatrix(rotationM, deltaAngle);
-        totalM = rotationM * totalM;//一定要左乘
+        totalM = rotationM * totalM;//一定要右乘
     }
 
     /// <summary>
@@ -239,9 +281,29 @@ public class ImpactBounds : MonoBehaviour
     private void SetScale(float deltaScale,Vector3 pos)
     {
         float y = 2f*(pos.y - 0.5f * Screen.height) * deltaScale/Screen.height;
-        float x = 2f * (pos.x - 0.5f * Screen.width) * mainCamera.aspect * deltaScale / Screen.width;
+        float x = 2f*(pos.x - 0.5f * Screen.width) * mainCamera.aspect * deltaScale / Screen.width;
         mainCamera.orthographicSize += deltaScale;
         SetDeltaMove(-new Vector3(x, y, 0));
+    }
+
+    /// <summary>
+    /// 执行总矩阵变化的后续处理
+    /// </summary>
+    /// <param name="m"></param>
+    private void ApplyTotalMatrix(Matrix4x4 m)
+    {
+        sides[0] = m.MultiplyPoint(topLeft);
+        sides[1] = m.MultiplyPoint(topRgiht);
+        sides[2] = m.MultiplyPoint(bottomLeft);
+        sides[3] = m.MultiplyPoint(bottomRight);
+
+        float h = mainCamera.orthographicSize;
+        float w = mainCamera.orthographicSize * mainCamera.aspect;
+
+        cameraSize[0] = m.inverse.MultiplyPoint(new Vector3(-w, h, 0));
+        cameraSize[1] = m.inverse.MultiplyPoint(new Vector3(w, h, 0));
+        cameraSize[2] = m.inverse.MultiplyPoint(new Vector3(-w, -h, 0));
+        cameraSize[3] = m.inverse.MultiplyPoint(new Vector3(w, -h, 0));
     }
 
     /// <summary>
@@ -249,18 +311,12 @@ public class ImpactBounds : MonoBehaviour
     /// </summary>
     /// <param name="totalMove">相机在世界的总移动</param>
     /// <param name="totalAngle">相机绕自身旋转的总角度，延z轴的负轴旋转</param
-    /// <param name="m">相机相对世界变换的逆变换</param>
-    private void MoveAndRotatCamera(Vector3 totalMove,float totalAngle,Matrix4x4 m)
+    private void MoveAndRotatCamera(Vector3 totalMove,float totalAngle)
     {
         //计算相机在世界中实际位移
         mainCamera.transform.localPosition = new Vector3(worldMove.x, cameraFar, worldMove.y);
         //计算相机在世界中实际旋转
         mainCamera.transform.localRotation = Quaternion.Euler(90,0f,-totalAngle);
-
-        sides[0] = m.MultiplyPoint(topLeft);
-        sides[1] = m.MultiplyPoint(topRgiht);
-        sides[2] = m.MultiplyPoint(bottomLeft);
-        sides[3] = m.MultiplyPoint(bottomRight);
     }
 
     /// <summary>
@@ -273,18 +329,31 @@ public class ImpactBounds : MonoBehaviour
         //转换小车坐标到相机坐标系
         Vector3 t_carPos = totalM.MultiplyPoint(pos);
 
-        if (t_carPos.magnitude < followSpd* followSpd)//距离单位米
+        if (Mathf.Abs(t_carPos.x)< followSpd)
         {
-            Vector3 t_deltaMove = MouseToWorld(t_carPos * followSpd);
+            Vector3 t_deltaMove = MouseToWorld(new Vector3(t_carPos.x,0,0));
             SetDeltaMove(t_deltaMove);
             isFollowing = false;
-            return;
+        }
+        else
+        {
+            Vector3 t_deltaMove2 = MouseToWorld(new Vector3(Mathf.Sign(t_carPos.x), 0, 0) * followSpd);
+            SetDeltaMove(t_deltaMove2);
+            isFollowing = true;
         }
 
-        Vector3 t_deltaMove2 = new Vector3(Mathf.Sign(t_carPos.x), Mathf.Sign(t_carPos.y), 0f)* followSpd;
-        t_deltaMove2= MouseToWorld(t_deltaMove2);
-        SetDeltaMove(t_deltaMove2);
-        isFollowing = true;
+        if (Mathf.Abs(t_carPos.y) < followSpd)
+        {
+            Vector3 t_deltaMove = MouseToWorld(new Vector3(0, t_carPos.y, 0));
+            SetDeltaMove(t_deltaMove);
+            isFollowing = false;
+        }
+        else
+        {
+            Vector3 t_deltaMove2 = MouseToWorld(new Vector3(0, Mathf.Sign(t_carPos.y), 0) * followSpd);
+            SetDeltaMove(t_deltaMove2);
+            isFollowing = true;
+        }
     }
 
     /// <summary>
@@ -391,19 +460,19 @@ public class ImpactBounds : MonoBehaviour
         {
             carPos.x += Input.GetAxis("Horizontal");
             carPos.y += Input.GetAxis("Vertical");
-            Follow(carPos, followSpeed);
+            Follow(carPos* Rate, followSpeed);
 
             if (Input.GetKey(KeyCode.G))//放大
             {
                 //转换小车坐标到相机坐标系
                 Vector3 t_carPos = totalM.MultiplyPoint(carPos);
-                SetScale(Time.deltaTime, t_carPos+new Vector3(Screen.width*0.5f, Screen.width*0.5f,0f));
+                SetScale(Time.deltaTime* Rate, t_carPos+new Vector3(Screen.width*0.5f, Screen.width*0.5f,0f));
             }
             else if (Input.GetKey(KeyCode.B))//缩小
             {
                 //转换小车坐标到相机坐标系
                 Vector3 t_carPos = totalM.MultiplyPoint(carPos);
-                SetScale(-Time.deltaTime, t_carPos + new Vector3(Screen.width * 0.5f, Screen.width * 0.5f, 0f));
+                SetScale(-Time.deltaTime* Rate, t_carPos + new Vector3(Screen.width * 0.5f, Screen.width * 0.5f, 0f));
             }
         }
 
@@ -418,7 +487,7 @@ public class ImpactBounds : MonoBehaviour
             if (followType == FollowType.Mouse&&Input.mousePosition != preMousePos)
             {
                 Vector3 deltaMove = MouseToWorld(Input.mousePosition - preMousePos);
-                SetDeltaMove(-deltaMove);
+                SetDeltaMove(-deltaMove* Rate);
                 preMousePos = Input.mousePosition;
             }
 
@@ -432,11 +501,11 @@ public class ImpactBounds : MonoBehaviour
             {
                 if (Input.GetKey(KeyCode.G))//放大
                 {
-                    SetScale(Time.deltaTime, Input.mousePosition);
+                    SetScale(Time.deltaTime* Rate, Input.mousePosition);
                 }
                 else if (Input.GetKey(KeyCode.B))//缩小
                 {
-                    SetScale(-Time.deltaTime, Input.mousePosition);
+                    SetScale(-Time.deltaTime* Rate, Input.mousePosition);
                 }
             }
         }
@@ -452,21 +521,21 @@ public class ImpactBounds : MonoBehaviour
 
     void LateUpdate()
     {
-        //四至点转化成相机坐标系
-        MoveAndRotatCamera(worldMove, totalAngle, totalM);
-
+        ApplyTotalMatrix(totalM);
         Vector3 t_moveBack;
 
         if (!IsRangeValid(out t_moveBack))
         {
             SetDeltaMove(t_moveBack);
-            MoveAndRotatCamera(worldMove, totalAngle, totalM);
+            ApplyTotalMatrix(totalM);           
             warningColor = Color.red;
         }
         else
         {
             warningColor = Color.green;
         }
+
+        MoveAndRotatCamera(worldMove, totalAngle);
     }
 
     /// <summary>

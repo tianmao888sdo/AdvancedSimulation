@@ -10,8 +10,8 @@ public class Global : MonoBase {
     // Use this for initialization
     void Start (){
         AssetMgr = this.gameObject.AddComponent<AssetsManager>();
-        TestMgr = this.gameObject.AddComponent<TestManager>();
-        TestMgr.Init();
+     //   TestMgr = this.gameObject.AddComponent<TestManager>();
+     //   TestMgr.Init();
     }
 
     void Update()

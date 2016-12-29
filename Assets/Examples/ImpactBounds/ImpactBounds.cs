@@ -185,7 +185,15 @@ public sealed class ImpactBounds : MonoBehaviour
         sides[2] = bottomLeft;
         sides[3] = bottomRight;
 
-        MapSelfAdapt();
+        float h = mainCamera.orthographicSize;
+        float w = mainCamera.orthographicSize * mainCamera.aspect;
+
+        cameraSize[0] = new Vector3(-w, h, 0);
+        cameraSize[1] = new Vector3(w, h, 0);
+        cameraSize[2] = new Vector3(-w, -h, 0);
+        cameraSize[3] = new Vector3(w, -h, 0);
+
+        //     MapSelfAdapt();
 
         m_cachedTotalAngle = totalAngle;
     }

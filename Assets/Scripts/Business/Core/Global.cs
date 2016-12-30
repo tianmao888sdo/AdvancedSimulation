@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using LocalAssets;
+using ResourcesLoader;
 
 public class Global : MonoBase {
 

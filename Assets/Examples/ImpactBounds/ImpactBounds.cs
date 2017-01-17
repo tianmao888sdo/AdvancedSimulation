@@ -257,8 +257,7 @@ namespace Ljf
         /// <returns></returns>
         private Vector3 ScreenToWorld(Vector3 deltaMove)
         {
-            deltaMove.y /= (Screen.height * 0.5f / mainCamera.orthographicSize);
-            deltaMove.x /= (Screen.height * mainCamera.aspect * 0.5f / mainCamera.orthographicSize);
+            deltaMove /= Screen.height * 0.5f / mainCamera.orthographicSize;
             return deltaMove;
         }
 
@@ -268,13 +267,32 @@ namespace Ljf
         /// <returns></returns>
         private Vector3 WorldToScreen(Vector3 deltaMove)
         {
-            deltaMove.y *= (Screen.height * 0.5f / mainCamera.orthographicSize);
-            deltaMove.x *= (Screen.height * mainCamera.aspect * 0.5f / mainCamera.orthographicSize);
+            deltaMove *= Screen.height * 0.5f / mainCamera.orthographicSize;
             return deltaMove;
         }
 
         /// <summary>
-        /// 设置累计移动值
+        /// 世界坐标转化为鼠标坐标,鼠标坐标原点为屏幕左下角
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        private Vector3 WorldToMouse(Vector3 pos)
+        {
+            return totalM.inverse.MultiplyPoint(pos) + new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f);
+        }
+
+        /// <summary>
+        /// 鼠标坐标转化为世界坐标,鼠标坐标原点为屏幕左下角
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        private Vector3 MouseToWorld(Vector3 pos)
+        {
+            return totalM.MultiplyPoint(pos - new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f));
+        }
+
+        /// <summary>
+        /// 设置累计移动值,按米移动
         /// </summary>
         /// <param name="deltaMove"></param>
         private void SetDeltaMove(Vector3 deltaMove)
@@ -301,7 +319,7 @@ namespace Ljf
             //计算相机相对自身的旋转
             totalAngle += deltaAngle;
 
-            if (totalAngle > 360)
+            if (totalAngle >= 360)
                 totalAngle -= 360f;
 
             if (totalAngle < 0)
@@ -388,32 +406,25 @@ namespace Ljf
                 return;
             }
 
-            //把地图单位转化为屏幕单位
-            Vector3 t_carPosScreen = WorldToScreen(t_carPos);
-
             if (Mathf.Abs(t_carPos.x) < followSpd)
             {
-                Vector3 t_deltaMove = ScreenToWorld(new Vector3(t_carPosScreen.x, 0, 0));
-                SetDeltaMove(t_deltaMove);
+                SetDeltaMove(new Vector3(t_carPos.x, 0, 0));
                 isFollowing = false;
             }
             else
             {
-                Vector3 t_deltaMove2 = ScreenToWorld(new Vector3(Mathf.Sign(t_carPosScreen.x), 0, 0) * followSpd);
-                SetDeltaMove(t_deltaMove2);
+                SetDeltaMove(new Vector3(Mathf.Sign(t_carPos.x), 0, 0) * followSpd);
                 isFollowing = true;
             }
 
             if (Mathf.Abs(t_carPos.y) < followSpd)
             {
-                Vector3 t_deltaMove = ScreenToWorld(new Vector3(0, t_carPosScreen.y, 0));
-                SetDeltaMove(t_deltaMove);
+                SetDeltaMove(new Vector3(0, t_carPos.y, 0));
                 isFollowing = false;
             }
             else
             {
-                Vector3 t_deltaMove2 = ScreenToWorld(new Vector3(0, Mathf.Sign(t_carPosScreen.y), 0) * followSpd);
-                SetDeltaMove(t_deltaMove2);
+                SetDeltaMove(new Vector3(0, Mathf.Sign(t_carPos.y), 0) * followSpd);
                 isFollowing = true;
             }
         }
@@ -430,29 +441,6 @@ namespace Ljf
         /// <param name="callback">位移和旋转结束回调</param>
         private void Follow(Vector3 pos, float followSpd, float angle, float rotateSpd, float scale, float scaleSpd, System.Action callback = null)
         {
-            //向小夹角方向旋转
-            float isRevive = totalAngle - angle > 180f ? -1 : 1;
-
-            //处理旋转
-            if (Mathf.Abs(totalAngle - angle) < rotateSpd)
-            {
-                SetDeltaRotation(isRevive * (angle - totalAngle) * rotateSpd);
-            }
-            else
-            {
-                SetDeltaRotation(isRevive * Mathf.Sign(angle - totalAngle) * rotateSpd);
-            }
-
-            //处理缩放
-            if (Mathf.Abs(mainCamera.orthographicSize - scale) < scaleSpd)
-            {
-                mainCamera.orthographicSize += (scale - mainCamera.orthographicSize) * scaleSpd;
-            }
-            else
-            {
-                mainCamera.orthographicSize += Mathf.Sign(scale - mainCamera.orthographicSize) * scaleSpd;
-            }
-
             //计算初始点相对于相机坐标系的位置
             Vector3 t_carPos = totalM.MultiplyPoint(pos);
 
@@ -464,29 +452,69 @@ namespace Ljf
                 return;
             }
 
-            //把地图单位转化为屏幕单位
-            Vector3 t_carPosScreen = WorldToScreen(t_carPos);
+            //向小夹角方向旋转
+            int isRevive = 1;
+            float angleResult = totalAngle - angle;
+            float tempAngle = 0f;
 
-            if (Mathf.Abs(t_carPos.x) < followSpd)
+            //限制在0到359.999之间
+            if (angleResult >= 360)
+                angleResult -= 360;
+
+            if (angleResult < 0)
+                angleResult += 360;
+
+            if (angleResult > 180f)//两角范围都是0到369.999
             {
-                Vector3 t_deltaMove = ScreenToWorld(new Vector3(t_carPosScreen.x, 0, 0));
-                SetDeltaMove(t_deltaMove);
+                isRevive = 1;
+                tempAngle = 360 - angleResult;//0到-180的绝对值
             }
             else
             {
-                Vector3 t_deltaMove2 = ScreenToWorld(new Vector3(Mathf.Sign(t_carPosScreen.x), 0, 0) * followSpd);
-                SetDeltaMove(t_deltaMove2);
+                isRevive = -1;
+                tempAngle = angleResult;
+            }
+
+            //处理旋转
+            if (tempAngle < rotateSpd)
+            {
+                SetDeltaRotation(isRevive * tempAngle);
+            }
+            else
+            {
+                SetDeltaRotation(isRevive * rotateSpd);
+            }
+
+            //处理缩放
+            if (Mathf.Abs(mainCamera.orthographicSize - scale) < scaleSpd)
+            {
+                mainCamera.orthographicSize += (scale - mainCamera.orthographicSize);
+            }
+            else
+            {
+                mainCamera.orthographicSize += Mathf.Sign(scale - mainCamera.orthographicSize) * scaleSpd;
+            }
+
+            if (Mathf.Abs(t_carPos.x) < followSpd)
+            {
+                SetDeltaMove(new Vector3(t_carPos.x, 0, 0));
+                isFollowing = false;
+            }
+            else
+            {
+                SetDeltaMove(new Vector3(Mathf.Sign(t_carPos.x), 0, 0) * followSpd);
+                isFollowing = true;
             }
 
             if (Mathf.Abs(t_carPos.y) < followSpd)
             {
-                Vector3 t_deltaMove = ScreenToWorld(new Vector3(0, t_carPosScreen.y, 0));
-                SetDeltaMove(t_deltaMove);
+                SetDeltaMove(new Vector3(0, t_carPos.y, 0));
+                isFollowing = false;
             }
             else
             {
-                Vector3 t_deltaMove2 = ScreenToWorld(new Vector3(0, Mathf.Sign(t_carPosScreen.y), 0) * followSpd);
-                SetDeltaMove(t_deltaMove2);
+                SetDeltaMove(new Vector3(0, Mathf.Sign(t_carPos.y), 0) * followSpd);
+                isFollowing = true;
             }
         }
 
@@ -598,28 +626,34 @@ namespace Ljf
 
             if (isReseting)
             {
-                Follow(Vector3.zero, resetSpd, m_cachedTotalAngle, rotateSpd * Rate, m_cachedScale, scaleSpd * Rate, () => {
+                Follow(Vector3.zero, resetSpd, m_cachedTotalAngle, rotateSpd, m_cachedScale, scaleSpd, () => {
                     isReseting = false;
                 });
             }
 
             if (followType == FollowType.AutoFollow && isReseting == false)
             {
-                carPos.x += Input.GetAxis("Horizontal");
-                carPos.y += Input.GetAxis("Vertical");
-                Follow(carPos, followSpeed * Rate);
+                carPos.x += Input.GetAxis("Horizontal") * Rate;
+                carPos.y += Input.GetAxis("Vertical") * Rate;
+                Follow(carPos, followSpeed);
+
+                if (Input.GetAxis("Mouse ScrollWheel") != 0)
+                {
+                    float deltaAngle = Input.GetAxis("Mouse ScrollWheel") * 10 * Rate;
+                    SetDeltaRotation(deltaAngle);
+                }
 
                 if (Input.GetKey(KeyCode.G))//放大
                 {
                     //转换小车坐标到相机坐标系
-                    Vector3 t_carPos = totalM.MultiplyPoint(carPos);
-                    SetScale(Time.deltaTime * Rate, t_carPos + new Vector3(Screen.width * 0.5f, Screen.width * 0.5f, 0f));
+                    Vector3 t_carPos = WorldToMouse(carPos);
+                    SetScale(Time.deltaTime * Rate * 10, t_carPos);
                 }
                 else if (Input.GetKey(KeyCode.B))//缩小
                 {
                     //转换小车坐标到相机坐标系
-                    Vector3 t_carPos = totalM.MultiplyPoint(carPos);
-                    SetScale(-Time.deltaTime * Rate, t_carPos + new Vector3(Screen.width * 0.5f, Screen.width * 0.5f, 0f));
+                    Vector3 t_carPos = WorldToMouse(carPos);
+                    SetScale(-Time.deltaTime * Rate * 10, t_carPos);
                 }
             }
 
@@ -730,7 +764,7 @@ namespace Ljf
             Gizmos.DrawLine(new Vector3(sides[2].x, 0, sides[2].y), new Vector3(sides[0].x, 0, sides[0].y));
 
             Gizmos.color = Color.yellow;
-            Gizmos.DrawSphere(new Vector3(carPos.x, 0, carPos.y), 0.5f);
+            Gizmos.DrawSphere(new Vector3(carPos.x, 0, carPos.y), Rate * 10);
         }
 
         /// <summary>
@@ -791,4 +825,3 @@ namespace Ljf
         }
     }
 }
-

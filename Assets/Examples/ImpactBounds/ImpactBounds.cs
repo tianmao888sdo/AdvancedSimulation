@@ -278,7 +278,9 @@ namespace Ljf
         /// <returns></returns>
         private Vector3 WorldToMouse(Vector3 pos)
         {
-            return totalM.inverse.MultiplyPoint(pos) + new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f);
+            Vector3 t_pos = totalM.MultiplyPoint(pos);
+            t_pos = WorldToScreen(t_pos);
+            return t_pos + new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f);
         }
 
         /// <summary>
@@ -288,7 +290,9 @@ namespace Ljf
         /// <returns></returns>
         private Vector3 MouseToWorld(Vector3 pos)
         {
-            return totalM.MultiplyPoint(pos - new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f));
+            Vector3 t_pos = pos - new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f);
+            t_pos = ScreenToWorld(t_pos);
+            return totalM.inverse.MultiplyPoint(t_pos);
         }
 
         /// <summary>
@@ -391,8 +395,9 @@ namespace Ljf
         /// <summary>
         /// 跟随地图上某个点
         /// </summary>
-        /// <param name="followSpd">跟随速度(米）</param>
         /// <param name="pos">汽车所在地图上的世界坐标点</param>
+        /// <param name="followSpd">跟随速度(米）</param>
+        /// <param name="callback">位移和旋转结束回调</param>
         private void Follow(Vector3 pos, float followSpd, System.Action callback = null)
         {
             //转换地图坐标到相机坐标系
@@ -640,20 +645,22 @@ namespace Ljf
                 if (Input.GetAxis("Mouse ScrollWheel") != 0)
                 {
                     float deltaAngle = Input.GetAxis("Mouse ScrollWheel") * 10 * Rate;
-                    SetDeltaRotation(deltaAngle);
+                    //           SetDeltaRotation(deltaAngle);
+
+                    //转换小车坐标到相机坐标系
+                    Vector3 t_carPos = WorldToMouse(carPos);
+                    Debug.Log(t_carPos);
+                    Debug.Log(Input.mousePosition+"::::::::::::::");
+                    SetScale(Mathf.Sign(deltaAngle) *Time.deltaTime * Rate * 100, t_carPos);
                 }
 
                 if (Input.GetKey(KeyCode.G))//放大
                 {
-                    //转换小车坐标到相机坐标系
-                    Vector3 t_carPos = WorldToMouse(carPos);
-                    SetScale(Time.deltaTime * Rate * 10, t_carPos);
+                    SetDeltaRotation(Time.deltaTime * Rate * 10);//, Input.mousePosition);
                 }
                 else if (Input.GetKey(KeyCode.B))//缩小
                 {
-                    //转换小车坐标到相机坐标系
-                    Vector3 t_carPos = WorldToMouse(carPos);
-                    SetScale(-Time.deltaTime * Rate * 10, t_carPos);
+                    SetDeltaRotation(-Time.deltaTime * Rate * 10);//, Input.mousePosition);
                 }
             }
 
@@ -674,19 +681,24 @@ namespace Ljf
 
                 if (Input.GetAxis("Mouse ScrollWheel") != 0)
                 {
-                    float deltaAngle = Input.GetAxis("Mouse ScrollWheel") * 10;
-                    SetDeltaRotation(deltaAngle);
+                    //float deltaAngle = Input.GetAxis("Mouse ScrollWheel") * 10;
+                    //SetDeltaRotation(deltaAngle);
+
+                    float deltaAngle = Input.GetAxis("Mouse ScrollWheel") * 10 * Rate;
+                    //           SetDeltaRotation(deltaAngle);
+
+                    SetScale(Mathf.Sign(deltaAngle) * Time.deltaTime * Rate * 100, Input.mousePosition);
                 }
 
                 if (followType == FollowType.Mouse)
                 {
                     if (Input.GetKey(KeyCode.G))//放大
                     {
-                        SetScale(Time.deltaTime * Rate, Input.mousePosition);
+                        SetDeltaRotation(Time.deltaTime * Rate);//, Input.mousePosition);
                     }
                     else if (Input.GetKey(KeyCode.B))//缩小
                     {
-                        SetScale(-Time.deltaTime * Rate, Input.mousePosition);
+                        SetDeltaRotation(-Time.deltaTime * Rate);//, Input.mousePosition);
                     }
                 }
             }

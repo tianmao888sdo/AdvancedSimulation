@@ -8,12 +8,17 @@ namespace Ljf
     /// image缓存池元素
     /// 
     /// </summary>
-    public sealed class ImageElement
+    public sealed class TextureElement
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        public string name;
+
         /// <summary>
         /// image
         /// </summary>
-        public Image image = null;
+        public Texture2D tex = null;
 
         /// <summary>
         /// 缓存时间（秒）
@@ -25,11 +30,18 @@ namespace Ljf
         /// </summary>
         public float saveTime = 0;
 
-        public ImageElement(Image image, float totalTime, float saveTime)
+        /// <summary>
+        /// 占用字节大小
+        /// </summary>
+        public long memorySize = 0;
+
+        public TextureElement(string name, Texture2D tex, float totalTime, float saveTime, long memorySize)
         {
-            this.image = image;
+            this.name = name;
+            this.tex = tex;
             this.totalTime = totalTime;
             this.saveTime = saveTime;
+            this.memorySize = memorySize;
         }
     }
 
@@ -42,8 +54,39 @@ namespace Ljf
     /// 修改日期：2017/2/8
     /// 修改人：lijunfeng
     /// 修改内容：增加时间缓存，优化卡顿
+    /// 修改日期：2017/2/13
+    /// 修改人：lijunfeng
+    /// 修改内容：地图格子加载方式采用tile管理自身加载和卸载图片级别的方式，暂时不适用缓存以免出现bug
     public sealed class GridImage : MonoBehaviour, IRelease
     {
+        /// <summary>
+        /// 对tile的操作类型
+        /// </summary>
+        private enum CmdType
+        {
+            Not,//空操作
+            Add,
+            Replace,
+            Remove
+        }
+
+        /// <summary>
+        /// tile操作命令
+        /// </summary>
+        private class Command
+        {
+            public CmdType cmdType;
+            public int xIndex = -1;
+            public int yIndex = -1;
+
+            public Command(CmdType cmdType, int xIndex, int yIndex)
+            {
+                this.cmdType = cmdType;
+                this.xIndex = xIndex;
+                this.yIndex = yIndex;
+            }
+        }
+
         /// <summary>
         /// 镜头控制类
         /// </summary>
@@ -71,7 +114,6 @@ namespace Ljf
         /// <summary>
         /// 地图尺寸（米）
         /// </summary>
-        [SerializeField]
         private Vector2 m_mapSize = new Vector2(1024f, 1024f);
 
         /// <summary>
@@ -101,6 +143,23 @@ namespace Ljf
         private int m_texLevel = -1;
 
         /// <summary>
+        /// 每贞最大加载的图片占用内存数
+        /// </summary>
+        [SerializeField]
+        private long m_maxMemorySize = 5000000;
+
+        /// <summary>
+        /// 最大缓存字节数
+        /// </summary>
+        [SerializeField]
+        private long m_maxCacheMemorySize = 10000000;
+
+        /// <summary>
+        /// 当前缓存字节数
+        /// </summary>
+        private long m_currCacheMemorySize = 0;
+
+        /// <summary>
         /// 保存变换后的4至点坐标
         /// </summary>
         private Vector3[] m_sides = new Vector3[4];
@@ -114,34 +173,19 @@ namespace Ljf
         private int m_rightIndex = -1;
 
         /// <summary>
-        /// 已经加载的地图块
+        /// texture2d时间池
         /// </summary>
-        private Dictionary<string, Image> m_imageDic = new Dictionary<string, Image>();
+        private Dictionary<string, TextureElement> m_imagePool = new Dictionary<string, TextureElement>();
 
         /// <summary>
-        /// 已经加载的图块id
+        /// 显示层所有地图格子
         /// </summary>
-        private HashSet<string> m_idsLoaded = new HashSet<string>();
+        private Image[,] m_viewGrid = null;
 
         /// <summary>
-        /// 临时保存需要加载的地图块id
+        /// tile操作队列
         /// </summary>
-        private HashSet<string> m_idsTemp = new HashSet<string>();
-
-        /// <summary>
-        /// 要卸载的地图块id
-        /// </summary>
-        private HashSet<string> m_idsRelease = new HashSet<string>();
-
-        /// <summary>
-        /// 要加载的地图块id
-        /// </summary>
-        private HashSet<string> m_idsDownload = new HashSet<string>();
-
-        /// <summary>
-        /// image时间池
-        /// </summary>
-        private Dictionary<string, ImageElement> m_imagePool = new Dictionary<string, ImageElement>();
+        private List<Command> m_commandQueue = new List<Command>();
 
         /// <summary>
         /// 格子索引x边界
@@ -193,7 +237,7 @@ namespace Ljf
         // Use this for initialization
         void Start()
         {
-
+            InitGrid();
         }
 
         // Update is called once per frame
@@ -210,6 +254,24 @@ namespace Ljf
             }
 
             ExecuteElements();
+            ExecuteDownloadAndRelease();
+
+        }
+
+        /// <summary>
+        /// 初始化所有格子
+        /// </summary>
+        private void InitGrid()
+        {
+            m_viewGrid = new Image[MaxXIndex, MaxYIndex];
+
+            for (int i = 0, iLen = m_viewGrid.GetLength(0); i < iLen; i++)
+            {
+                for (int j = 0, jLen = m_viewGrid.GetLength(1); j < jLen; j++)
+                {
+                    m_viewGrid[i, j] = CreateImage(i, j);
+                }
+            }
         }
 
         /// <summary>
@@ -368,44 +430,33 @@ namespace Ljf
 
         /// <summary>
         /// 计算要加载的地图快id列表,并且计算要卸载的id列表
-        /// id拼写规则为x_y_level
         /// 地图切块坐标从左下角开始计算，从00开始
         /// </summary>
         private void CalculateDownloadAndRelease()
         {
-            m_idsTemp.Clear();
+            Command t_cmd;
 
-            for (int i = m_leftIndex; i <= m_rightIndex; i++)
+            for (int i = 0, iLen = m_viewGrid.GetLength(0); i < iLen; i++)
             {
-                for (int j = m_bottomIndex; j <= m_topIndex; j++)
+                for (int j = 0, jLen = m_viewGrid.GetLength(1); j < jLen; j++)
                 {
-                    string texName = i + "_" + j + "_" + m_texLevel;
-                    m_idsTemp.Add(texName);
+                    if (i >= m_leftIndex && i <= m_rightIndex && j >= m_bottomIndex && j <= m_topIndex)
+                        t_cmd = new Command(CmdType.Add, i, j);
+                    else
+                        t_cmd = new Command(CmdType.Remove, i, j);
+
+                    Command t_cmdA = m_commandQueue.Find(item => item.xIndex == t_cmd.xIndex && item.yIndex == t_cmd.yIndex);
+
+                    if (t_cmdA != null)
+                    {
+                        t_cmdA.cmdType = t_cmd.cmdType;
+                    }
+                    else
+                    {
+                        m_commandQueue.Add(t_cmd);
+                    }
                 }
             }
-
-            //计算要加载的和要卸载的地图块id
-            m_idsRelease.Clear();
-            m_idsDownload.Clear();
-
-            foreach (var item in m_idsLoaded)
-            {
-                if (!m_idsTemp.Contains(item))
-                {
-                    m_idsRelease.Add(item);
-                }
-            }
-
-            foreach (var item in m_idsTemp)
-            {
-                if (!m_idsLoaded.Contains(item))
-                {
-                    m_idsDownload.Add(item);
-                }
-            }
-
-            //处理加载和卸载
-            ExecuteDownloadAndRelease();
         }
 
         /// <summary>
@@ -413,61 +464,52 @@ namespace Ljf
         /// </summary>
         private void ExecuteDownloadAndRelease()
         {
-            foreach (var item in m_idsRelease)
+            long currMem = 0;
+
+            lock (m_commandQueue)
             {
-                RemoveImage(item);
-            }
+                while (m_commandQueue.Count > 0)
+                {
+                    Command t_cmd = m_commandQueue[0];
+                    m_commandQueue.RemoveAt(0);
+                    Image t_image = m_viewGrid[t_cmd.xIndex, t_cmd.yIndex];
 
-            foreach (var item in m_idsDownload)
-            {
-                CreateImage(item);
-            }
-        }
+                    if (t_cmd.cmdType == CmdType.Add)
+                    {
+                        if (t_image.IsEmpty || t_image.level != m_texLevel)
+                        {
+                            currMem += LoadImage(t_cmd.xIndex, t_cmd.yIndex);
+                        }
+                    }
+                    else if (t_cmd.cmdType == CmdType.Remove)
+                    {
+                        if (!t_image.IsEmpty)
+                        {
+                            ClearImage(t_cmd.xIndex, t_cmd.yIndex);
+                        }
+                    }
 
-        /// <summary>
-        /// 创建图块，图块命名规则为x_y_lv
-        /// </summary>
-        /// <param name="name"></param>
-        private void CreateImage(string name)
-        {
-            ImageElement imageElement = PoolFrom(name);
-
-            if (imageElement == null)
-            {
-                string[] str = name.Split(new char[] { '_' }, StringSplitOptions.None);
-                int xIndex = int.Parse(str[0]);
-                int yIndex = int.Parse(str[1]);
-                int lv = int.Parse(str[2]);
-
-                GameObject obj = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                Image image = obj.AddComponent<Image>();
-                image.Resize(m_tileSize, m_tileSize);
-                obj.transform.parent = transform;
-
-                m_imageDic.Add(name, image);
-                m_idsLoaded.Add(name);
-                image.Load(AssetPath + lv + "/" + name + ".JPEG");
-                image.name = name;
-
-                //设定image坐标
-                SetTexTransfrom(image, xIndex, yIndex);
-            }
-            else
-            {
-                m_imageDic.Add(name, imageElement.image);
-                m_idsLoaded.Add(name);
+                    if (currMem >= m_maxMemorySize)
+                        break;
+                }
             }
         }
 
         /// <summary>
-        ///  删除图块，实际只是清除图块内容
+        /// 创建图块
         /// </summary>
-        private void RemoveImage(string name)
+        /// <param name="xIndex"></param>
+        /// <param name="yIndex"></param>
+        /// <returns></returns>
+        private Image CreateImage(int xIndex, int yIndex)
         {
-            ImageElement element = new ImageElement(m_imageDic[name], 5f, Time.realtimeSinceStartup);
-            PoolIn(element);
-            m_imageDic.Remove(name);
-            m_idsLoaded.Remove(name);
+            GameObject obj = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            Image image = obj.AddComponent<Image>();
+            image.Resize(m_tileSize, m_tileSize);
+            obj.transform.parent = transform;
+            SetTexTransfrom(image, xIndex, yIndex);
+            image.name = xIndex + "_" + yIndex;
+            return image;
         }
 
         /// <summary>
@@ -484,15 +526,74 @@ namespace Ljf
         }
 
         /// <summary>
+        /// 加载图块
+        /// </summary>
+        /// <param name="xIndex"></param>
+        /// <param name="yIndex"></param>
+        /// <returns>返回加载的字节数</returns>
+        private long LoadImage(int xIndex, int yIndex)
+        {
+            //Image t_image = m_viewGrid[xIndex, yIndex];
+            //string name = xIndex + "_" + yIndex + "_" + m_texLevel;
+            //TextureElement element = PoolFrom(name);
+
+            //if (element == null)
+            //{
+            //    t_image.Load(Application.streamingAssetsPath + "/" + AssetPath + "/" + m_texLevel + "/" + name + ".JPEG");
+            //    t_image.SamplingWidth = Mathf.Max(1, Mathf.RoundToInt(4 / (Mathf.Pow(2, (5 - m_texLevel)))));
+            //    t_image.level = m_texLevel;
+            //}
+            //else
+            //{
+            //    t_image.Load(element.tex);
+            //    t_image.SamplingWidth = Mathf.Max(1, Mathf.RoundToInt(4 / (Mathf.Pow(2, (5 - m_texLevel)))));
+            //    t_image.level = m_texLevel;
+            //}
+
+            //不用缓存
+            Image t_image = m_viewGrid[xIndex, yIndex];
+            string name = xIndex + "_" + yIndex + "_" + m_texLevel;
+            t_image.Load(Application.streamingAssetsPath + "/" + AssetPath + "/" + m_texLevel + "/" + name + ".JPEG");
+            t_image.SamplingWidth = Mathf.Max(1, Mathf.RoundToInt(4 / (Mathf.Pow(2, (5 - m_texLevel)))));
+            t_image.level = m_texLevel;
+            return t_image.MemorySize;
+        }
+
+        /// <summary>
+        /// 清除图块
+        /// </summary>
+        /// <param name="xIndex"></param>
+        /// <param name="yIndex"></param>
+        private void ClearImage(int xIndex, int yIndex)
+        {
+            //Image t_image = m_viewGrid[xIndex, yIndex];
+
+            //内存够大就缓存
+            //if (m_currCacheMemorySize + t_image.MemorySize < m_maxCacheMemorySize)
+            //{
+            //    string name = xIndex + "_" + yIndex + "_" + m_texLevel;
+            //    TextureElement element = new TextureElement(name, t_image.GetTexture(), 5f, Time.realtimeSinceStartup, t_image.MemorySize);
+            //    PoolIn(element);
+            //}
+
+            //t_image.Clear();
+
+            //不用缓存
+            Image t_image = m_viewGrid[xIndex, yIndex];
+            t_image.Clear();
+        }
+
+        /// <summary>
         /// 加入缓存池
         /// </summary>
         /// <param name="element"></param>
-        public void PoolIn(ImageElement element)
+        public void PoolIn(TextureElement element)
         {
-            element.image.gameObject.SetActive(false);
-
-            if (!m_imagePool.ContainsKey(element.image.name))
-                m_imagePool.Add(element.image.name, element);
+            if (!m_imagePool.ContainsKey(element.name))
+            {
+                m_imagePool.Add(element.name, element);
+                m_currCacheMemorySize += element.memorySize;
+            }
         }
 
         /// <summary>
@@ -500,13 +601,13 @@ namespace Ljf
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public ImageElement PoolFrom(string id)
+        public TextureElement PoolFrom(string id)
         {
-            ImageElement element = null;
+            TextureElement element = null;
 
             if (m_imagePool.TryGetValue(id, out element))
             {
-                element.image.gameObject.SetActive(true);
+                m_currCacheMemorySize -= element.memorySize;
                 m_imagePool.Remove(id);
             }
 
@@ -523,12 +624,12 @@ namespace Ljf
 
             for (int i = 0; i < keys.Length; i++)
             {
-                ImageElement element = m_imagePool[keys[i]];
+                TextureElement element = m_imagePool[keys[i]];
 
                 if (Time.realtimeSinceStartup - element.saveTime >= element.totalTime)
                 {
-                    element.image.Dispose();
-                    Destroy(element.image.gameObject);
+                    m_currCacheMemorySize -= element.memorySize;
+                    element.tex = null;
                     m_imagePool.Remove(keys[i]);
                 }
             }
@@ -536,24 +637,26 @@ namespace Ljf
 
         public void Release(bool destroy = false)
         {
-            //卸载所有已加载图块
-            foreach (var item in m_imageDic)
-            {
-                Destroy(item.Value.gameObject);
-            }
-
-            m_imageDic.Clear();
-            m_idsLoaded.Clear();
-            m_idsTemp.Clear();
-            m_idsRelease.Clear();
-            m_idsDownload.Clear();
-
             foreach (var item in m_imagePool)
             {
-                Destroy(item.Value.image.gameObject);
+                item.Value.tex = null;
             }
 
             m_imagePool.Clear();
+
+            for (int i = 0, iLen = m_viewGrid.GetLength(0); i < iLen; i++)
+            {
+                for (int j = 0, jLen = m_viewGrid.GetLength(1); j < jLen; j++)
+                {
+                    m_viewGrid[i, j].Dispose();
+                    Destroy(m_viewGrid[i, j].gameObject);
+                    m_viewGrid[i, j] = null;
+                }
+            }
+
+            m_viewGrid = null;
+            m_commandQueue.Clear();
+            m_commandQueue = null;
         }
     }
 }

@@ -11,6 +11,9 @@ namespace Ljf
     /// 创建日期：2016/12/20
     /// 修改日期：2016/12/26
     /// 修改人：lijunfeng
+    /// 修改日期：2017/2/14
+    /// 修改人：lijunfeng
+    /// 修改内容：相机的移动规则改为：当地图宽度大于相机宽度时，相机上下留黑边
     /// </summary>
     public sealed class ImpactBounds : MonoBehaviour
     {
@@ -582,8 +585,18 @@ namespace Ljf
             float v = Mathf.Abs(top - bottom);
             float h = Mathf.Abs(left - right);
 
-            if (mainCamera.orthographicSize > v * 0.5f)
-                mainCamera.orthographicSize = v * 0.5f;
+            float a = mapWidth / mapHeight;
+
+            if (a > mainCamera.aspect)
+            {
+                if (mainCamera.orthographicSize > h * mainCamera.aspect * 0.5f)
+                    mainCamera.orthographicSize = h * mainCamera.aspect * 0.5f;
+            }
+            else
+            {
+                if (mainCamera.orthographicSize > v * 0.5f)
+                    mainCamera.orthographicSize = v * 0.5f;
+            }
 
             moveBack = Vector3.zero;
 
@@ -591,7 +604,7 @@ namespace Ljf
             {
                 moveBack.x = (right + left) * 0.5f;
             }
-            else if (mainCamera.orthographicSize * mainCamera.aspect <= h * 0.5f)//相机两边小于地图范围时，相机任意一边不能超出范围
+            else if (mainCamera.orthographicSize * mainCamera.aspect <= h * 0.5f)//相机两边小于地图范围时，相机左右任意一边不能超出范围
             {
                 if (right < mainCamera.orthographicSize * mainCamera.aspect)
                 {
@@ -604,14 +617,21 @@ namespace Ljf
                 }
             }
 
-            if (top < mainCamera.orthographicSize)
+            if (mainCamera.orthographicSize > v * 0.5)//相机上下大于范围时，相机y轴固定（仍然可以上下放大)，左右可拖动
             {
-                moveBack.y = top - mainCamera.orthographicSize;
+                moveBack.y = (top + bottom) * 0.5f;
             }
-
-            if (bottom > -mainCamera.orthographicSize)
+            else if (mainCamera.orthographicSize <= v * 0.5f)//相机上下小于地图范围时，相机上下任意一边不能超出范围
             {
-                moveBack.y = bottom + mainCamera.orthographicSize;
+                if (top < mainCamera.orthographicSize)
+                {
+                    moveBack.y = top - mainCamera.orthographicSize;
+                }
+
+                if (bottom > -mainCamera.orthographicSize)
+                {
+                    moveBack.y = bottom + mainCamera.orthographicSize;
+                }
             }
 
             return moveBack == Vector3.zero;

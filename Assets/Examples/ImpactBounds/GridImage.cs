@@ -114,6 +114,7 @@ namespace Ljf
         /// <summary>
         /// 地图尺寸（米）
         /// </summary>
+        [SerializeField]
         private Vector2 m_mapSize = new Vector2(1024f, 1024f);
 
         /// <summary>

@@ -1,11 +1,10 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System;
 
 /// <summary>
 /// 车辆控制中心，所有对车的操作，全部集中到这里，最终将操作作用于4个轮子
 /// </summary>
-public class CarControlCenter : MonoBase,IRelease
+public class CarControlCenter:MonoBase
 {
     /// <summary>
     /// 属性
@@ -42,10 +41,10 @@ public class CarControlCenter : MonoBase,IRelease
     private BrakeSystem m_brakeSystem;
 
     /// <summary>
-    /// 轮胎
+    /// 传动系统
     /// </summary>
     [SerializeField]
-    private Wheel[] m_Wheels = new Wheel[4];
+    private TransmissionSystem m_transmissionSystem;
 
     void OnGUI()
     {
@@ -54,6 +53,8 @@ public class CarControlCenter : MonoBase,IRelease
 
     public override void Init()
     {
+        base.Init();
+
         KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Horizontal", (number) =>{m_carAttributes.steering = Mathf.Clamp(number, -1f, 1f);});
         KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Vertical", (number) => { m_carAttributes.accelerator = Mathf.Clamp(number, 0, 1); });
   //      KeyInputManager.Instance.AddAxisDelegate(KeyInputManager.InputMode.CarControl, "Jump", (number) => { m_carAttributes.brake = Mathf.Clamp(number, 0, 1); });
@@ -83,12 +84,10 @@ public class CarControlCenter : MonoBase,IRelease
         m_gearBoxSystem.Init();
         m_steeringSystem.Init();
         m_brakeSystem.Init();
-
-        for (int i = 0; i < 4; i++)
-            m_Wheels[i].Init();
+        m_transmissionSystem.Init();
     }
 
-	private void Update()
+    protected override void DUpdate()
     {
         m_engineSystem.SetThrottleInput(m_carAttributes.accelerator);
         m_gearBoxSystem.SetGear(1);
@@ -96,60 +95,9 @@ public class CarControlCenter : MonoBase,IRelease
         m_gearBoxSystem.SetClutch(0);
         m_steeringSystem.SetSteeringInput(m_carAttributes.steering);
 
-        //m_brakeSystem.SetBrakeInput(m_carAttributes.brake);
-        //Move(m_gearBoxSystem.OutputTorque, m_brakeSystem.BrakeTorque);
         //暂时用刹车比例代替刹车力矩
-        Move(m_gearBoxSystem.OutputTorque, m_carAttributes.brake);
-
-        for (int i = 0; i < 4; i++)
-            m_Wheels[i].UpdateWheels();
-
-  //      this.GetComponent<Rigidbody>().AddForce(Vector3.down*10000f);
-    }
-
-    /// <summary>
-    /// 驱动和刹车
-    /// </summary>
-    /// <param name="motorTorque"></param>
-    /// <param name="brakeTorque"></param>
-    private void Move(float motorTorque,float brakeTorque)
-    {
-        float t_motorTorque = 0f;
-
-        switch (m_carAttributes.motorMode)
-        {
-            case CarAttributes.MotorMode.FrontTwoDrive:
-                t_motorTorque = m_gearBoxSystem.OutputTorque / 2f;
-                m_Wheels[0].SetMotorTorque(t_motorTorque);
-                m_Wheels[1].SetMotorTorque(t_motorTorque);
-                break;
-            case CarAttributes.MotorMode.RearTwoDrive:
-                t_motorTorque = m_gearBoxSystem.OutputTorque / 2f;
-                m_Wheels[2].SetMotorTorque(t_motorTorque);
-                m_Wheels[3].SetMotorTorque(t_motorTorque);
-                break;
-            case CarAttributes.MotorMode.FourDrive:
-                t_motorTorque = m_gearBoxSystem.OutputTorque / 4f;
-                m_Wheels[0].SetMotorTorque(t_motorTorque);
-                m_Wheels[1].SetMotorTorque(t_motorTorque);
-                m_Wheels[2].SetMotorTorque(t_motorTorque);
-                m_Wheels[3].SetMotorTorque(t_motorTorque);
-                break;
-        }
-
-        switch (m_carAttributes.brakeMode)
-        {
-            case CarAttributes.BrakeMode.RearTwoBrake:
-				m_Wheels[2].SetBrakeTorque(brakeTorque);
-				m_Wheels[3].SetBrakeTorque(brakeTorque);
-                break;
-		case CarAttributes.BrakeMode.FourBrake:
-				m_Wheels[0].SetBrakeTorque(brakeTorque);
-				m_Wheels[1].SetBrakeTorque(brakeTorque);
-				m_Wheels[2].SetBrakeTorque(brakeTorque);
-				m_Wheels[3].SetBrakeTorque(brakeTorque);
-                break;
-        }
+        m_transmissionSystem.Move(m_carAttributes.motorMode, m_gearBoxSystem.OutputTorque);
+        m_brakeSystem.Brake(m_carAttributes.brakeMode, m_carAttributes.brake);
     }
 
     public float GetAccelerator()
@@ -245,8 +193,10 @@ public class CarControlCenter : MonoBase,IRelease
 
     }
 
-    public void Release(bool destroy = false)
+    public override void Release(bool destroy = false)
     {
+        base.Release(destroy);
         throw new NotImplementedException();
     }
+
 }

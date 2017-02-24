@@ -5,25 +5,17 @@ using System;
 /// <summary>
 /// 减速器
 /// </summary>
-public class GearReducerSystem : MonoBase,IRelease 
+public class GearReducerSystem : MonoBase 
 {
     public override void Init()
     {
+        base.Init();
         throw new NotImplementedException();
     }
 
-    public void Release(bool destroy = false)
+    public override void Release(bool destroy = false)
     {
+        base.Release(destroy);
         throw new NotImplementedException();
     }
-
-    // Use this for initialization
-    void Start () {
-	
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
 }

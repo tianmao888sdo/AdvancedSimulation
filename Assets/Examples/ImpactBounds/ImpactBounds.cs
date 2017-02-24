@@ -13,7 +13,7 @@ namespace Ljf
     /// 修改人：lijunfeng
     /// 修改日期：2017/2/14
     /// 修改人：lijunfeng
-    /// 修改内容：相机的移动规则改为：当地图宽度大于相机宽度时，相机上下留黑边
+    /// 修改内容：相机的移动规则改为：当地图宽度大于相机宽度时，相机上下留黑边，修正了缩放超过最大范围时的抖动
     /// </summary>
     public sealed class ImpactBounds : MonoBehaviour
     {
@@ -231,7 +231,17 @@ namespace Ljf
         {
             SetRotation(totalAngle);
             ApplyTotalMatrix(totalM);
-            m_cachedScale = mainCamera.orthographicSize = GetMapHeight() * 0.5f;
+
+            float a = mapHeight / mapHeight;
+
+            if (a > mainCamera.aspect)
+            {
+                mainCamera.orthographicSize = GetMapWidth() * 0.5f / mainCamera.aspect;
+            }
+            else
+            {
+                mainCamera.orthographicSize = GetMapHeight() * 0.5f;
+            }
         }
 
         /// <summary>
@@ -356,10 +366,74 @@ namespace Ljf
         /// <param name="pos">围绕屏幕上哪个点，从左下角为00点</param>
         private void SetScale(float deltaScale, Vector3 pos)
         {
+            float maxCameraSize = 0f;
+
+            if (CheckOverSide(mainCamera.orthographicSize + deltaScale, out maxCameraSize))
+            {
+                mainCamera.orthographicSize = maxCameraSize;
+            }
+            else
+            {
+                mainCamera.orthographicSize += deltaScale;
+            }
+
             float y = 2f * (pos.y - 0.5f * Screen.height) * deltaScale / Screen.height;
             float x = 2f * (pos.x - 0.5f * Screen.width) * mainCamera.aspect * deltaScale / Screen.width;
-            mainCamera.orthographicSize += deltaScale;
             SetDeltaMove(-new Vector3(x, y, 0));
+        }
+
+        /// <summary>
+        /// 限制相机size，判断是否超出范围
+        /// </summary>
+        /// <param name="cameraSize">要检测的size</param>
+        /// <param name="cameraSize">返回最大size</param>
+        /// <returns>true 超出范围</returns>
+        private bool CheckOverSide(float cameraSize, out float maxSize)
+        {
+            top = sides[0].y;
+            bottom = sides[0].y;
+            left = sides[0].x;
+            right = sides[0].x;
+
+            for (int i = 1; i < 4; i++)
+            {
+                if (top < sides[i].y)
+                    top = sides[i].y;
+
+                if (bottom > sides[i].y)
+                    bottom = sides[i].y;
+
+                if (left > sides[i].x)
+                    left = sides[i].x;
+
+                if (right < sides[i].x)
+                    right = sides[i].x;
+            }
+
+            float v = Mathf.Abs(top - bottom);
+            float h = Mathf.Abs(left - right);
+            float hh = cameraSize * mainCamera.aspect;
+            float a = mapWidth / mapHeight;
+
+            if (a > mainCamera.aspect)
+            {
+                if (hh > h * 0.5f)
+                {
+                    maxSize = h * 0.5f / mainCamera.aspect;
+                    return true;
+                }
+            }
+            else
+            {
+                if (cameraSize > v * 0.5f)
+                {
+                    maxSize = v * 0.5f;
+                    return true;
+                }
+            }
+
+            maxSize = 0f;
+            return false;
         }
 
         /// <summary>
@@ -556,6 +630,35 @@ namespace Ljf
         }
 
         /// <summary>
+        /// 获取地图宽度（米）
+        /// </summary>
+        /// <returns></returns>
+        private float GetMapWidth()
+        {
+            top = sides[0].y;
+            bottom = sides[0].y;
+            left = sides[0].x;
+            right = sides[0].x;
+
+            for (int i = 1; i < 4; i++)
+            {
+                if (top < sides[i].y)
+                    top = sides[i].y;
+
+                if (bottom > sides[i].y)
+                    bottom = sides[i].y;
+
+                if (left > sides[i].x)
+                    left = sides[i].x;
+
+                if (right < sides[i].x)
+                    right = sides[i].x;
+            }
+
+            return Mathf.Abs(right - left);
+        }
+
+        /// <summary>
         /// 判断相机范围是否合法
         /// </summary>
         /// <param name="moveBack">要还原的位移</param>
@@ -584,45 +687,65 @@ namespace Ljf
 
             float v = Mathf.Abs(top - bottom);
             float h = Mathf.Abs(left - right);
-
+            float hh = mainCamera.orthographicSize * mainCamera.aspect;
             float a = mapWidth / mapHeight;
+
+            moveBack = Vector3.zero;
 
             if (a > mainCamera.aspect)
             {
-                if (mainCamera.orthographicSize > h * mainCamera.aspect * 0.5f)
-                    mainCamera.orthographicSize = h * mainCamera.aspect * 0.5f;
+                if (hh > h * 0.5f)
+                    mainCamera.orthographicSize = h * 0.5f / mainCamera.aspect;
+
+                if (mainCamera.orthographicSize > v * 0.5)//相机上下大于范围时，相机y轴固定（仍然可以上下放大)，左右可拖动
+                {
+                    moveBack.y = (top + bottom) * 0.5f;
+                }
+                else if (mainCamera.orthographicSize <= v * 0.5f)//相机上下小于地图范围时，相机上下任意一边不能超出范围
+                {
+                    if (top < mainCamera.orthographicSize)
+                    {
+                        moveBack.y = top - mainCamera.orthographicSize;
+                    }
+
+                    if (bottom > -mainCamera.orthographicSize)
+                    {
+                        moveBack.y = bottom + mainCamera.orthographicSize;
+                    }
+                }
+
+                if (right < hh)
+                {
+                    moveBack.x = right - hh;
+                }
+
+                if (left > -hh)
+                {
+                    moveBack.x = left + hh;
+                }
             }
             else
             {
                 if (mainCamera.orthographicSize > v * 0.5f)
                     mainCamera.orthographicSize = v * 0.5f;
-            }
 
-            moveBack = Vector3.zero;
-
-            if (mainCamera.orthographicSize * mainCamera.aspect > h * 0.5)//相机两边大于范围时，相机x轴固定（仍然可以左右放大)，上下可拖动
-            {
-                moveBack.x = (right + left) * 0.5f;
-            }
-            else if (mainCamera.orthographicSize * mainCamera.aspect <= h * 0.5f)//相机两边小于地图范围时，相机左右任意一边不能超出范围
-            {
-                if (right < mainCamera.orthographicSize * mainCamera.aspect)
+                if (hh > h * 0.5)//相机两边大于范围时，相机x轴固定（仍然可以左右放大)，上下可拖动
                 {
-                    moveBack.x = right - mainCamera.orthographicSize * mainCamera.aspect;
+                    moveBack.x = (right + left) * 0.5f;
+                }
+                else if (hh <= h * 0.5f)//相机两边小于地图范围时，相机左右任意一边不能超出范围
+                {
+                    if (right < hh)
+                    {
+                        moveBack.x = right - hh;
+                    }
+
+                    if (left > -hh)
+                    {
+                        moveBack.x = left + hh;
+                    }
                 }
 
-                if (left > -mainCamera.orthographicSize * mainCamera.aspect)
-                {
-                    moveBack.x = left + mainCamera.orthographicSize * mainCamera.aspect;
-                }
-            }
-
-            if (mainCamera.orthographicSize > v * 0.5)//相机上下大于范围时，相机y轴固定（仍然可以上下放大)，左右可拖动
-            {
-                moveBack.y = (top + bottom) * 0.5f;
-            }
-            else if (mainCamera.orthographicSize <= v * 0.5f)//相机上下小于地图范围时，相机上下任意一边不能超出范围
-            {
                 if (top < mainCamera.orthographicSize)
                 {
                     moveBack.y = top - mainCamera.orthographicSize;

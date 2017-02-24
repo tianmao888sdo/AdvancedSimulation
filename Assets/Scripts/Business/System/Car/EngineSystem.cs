@@ -5,7 +5,7 @@ using System;
 /// <summary>
 /// 
 /// </summary>
-public class EngineSystem: MonoBase, IEngine,IRelease
+public class EngineSystem: MonoBase, IEngine
 {
     /// <summary>
     /// 最大转速，转速/分钟
@@ -60,6 +60,7 @@ public class EngineSystem: MonoBase, IEngine,IRelease
     /// <summary>
     /// 油门输入
     /// </summary>
+    [SerializeField]
     private float m_throttleInput = 0f;
 
     /// <summary>
@@ -119,6 +120,8 @@ public class EngineSystem: MonoBase, IEngine,IRelease
 
     public override void Init()
     {
+        base.Init();
+
         //读取配置文件获得参数
         Keyframe[] keys = new Keyframe[]
         {
@@ -160,13 +163,14 @@ public class EngineSystem: MonoBase, IEngine,IRelease
         }
 
         m_rpm = Mathf.Clamp(m_rpm, 0f, m_maxRPM);
-        m_torque= m_torqueRpmCurve.Evaluate(m_rpm) * m_mechanicalEfficiency;
-        m_watts = m_torque *0.735f*m_rpm*m_mechanicalEfficiency / 9549;
+        m_torque = m_torqueRpmCurve.Evaluate(m_rpm) * m_mechanicalEfficiency;
+        m_watts = m_torque * 0.735f * m_rpm * m_mechanicalEfficiency / 9549;
         m_force = m_torque * m_mechanicalEfficiency / m_crankShaftRadius;
     }
 
-    public void Release(bool destroy = false)
+    public override void Release(bool destroy = false)
     {
+        base.Release(destroy);
         throw new NotImplementedException();
     }
 }

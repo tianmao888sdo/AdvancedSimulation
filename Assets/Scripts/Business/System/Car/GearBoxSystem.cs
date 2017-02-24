@@ -5,7 +5,7 @@ using System;
 /// <summary>
 /// 变速箱
 /// </summary>
-public class GearBoxSystem : MonoBase, IGearBox,IRelease
+public class GearBoxSystem : MonoBase, IGearBox
 {
     /// <summary>
     /// 档位
@@ -83,6 +83,7 @@ public class GearBoxSystem : MonoBase, IGearBox,IRelease
     /// <summary>
     /// 输入扭矩
     /// </summary>
+    [SerializeField]
     private float m_torqueInput;
 
     /// <summary>
@@ -110,6 +111,7 @@ public class GearBoxSystem : MonoBase, IGearBox,IRelease
 
     public override void Init()
     {
+        base.Init();
         //读取配置文件获得参数
 
         m_gears = new Gear[]

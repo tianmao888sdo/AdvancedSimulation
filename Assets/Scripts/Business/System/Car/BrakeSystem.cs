@@ -5,7 +5,13 @@ using System;
 /// <summary>
 /// 刹车系统
 /// </summary>
-public class BrakeSystem : MonoBase,IRelease {
+public class BrakeSystem : MonoBase, IBrake
+{
+    /// <summary>
+    /// 轮胎,前右，前左，后右，后左
+    /// </summary>
+    [SerializeField]
+    private Wheel[] m_Wheels = new Wheel[4];
 
     /// <summary>
     /// 最大刹车力矩
@@ -22,29 +28,56 @@ public class BrakeSystem : MonoBase,IRelease {
     /// <summary>
     /// 刹车输入
     /// </summary>
-    private float m_brakeInput = 0f;
+    private float m_brakeInput = -1f;
 
     /// <summary>
     /// 刹车力矩
     /// </summary>
-    public float BrakeTorque {get { return m_brakeInput * m_maxBrakeTorque; }}
-
+    private float BrakeTorque {get { return m_brakeInput * m_maxBrakeTorque; }}
 
     public override void Init()
     {
-
+        base.Init();
+        ExecuteBrake(CarAttributes.BrakeMode.FourBrake, 0);
     }
 
     /// <summary>
-    /// 外部刹车输入
+    /// 驱动和刹车
     /// </summary>
-    public void SetBrakeInput(float val)
+    /// <param name="brakeMode"></param>
+    /// <param name="brakeTorque"></param>
+    public void Brake(CarAttributes.BrakeMode brakeMode, float brakeInput)
     {
-        m_brakeInput = val;
+        if (m_brakeInput != brakeInput)
+            m_brakeInput = brakeInput;
+        else
+            return;
+
+        ExecuteBrake(brakeMode, brakeInput);
     }
 
-    public void Release(bool destroy = false)
+    private void ExecuteBrake(CarAttributes.BrakeMode brakeMode, float brakeInput)
     {
+        float t_brakeTorque = BrakeTorque;
+
+        switch (brakeMode)
+        {
+            case CarAttributes.BrakeMode.RearTwoBrake:
+                m_Wheels[2].SetBrakeTorque(t_brakeTorque);
+                m_Wheels[3].SetBrakeTorque(t_brakeTorque);
+                break;
+            case CarAttributes.BrakeMode.FourBrake:
+                m_Wheels[0].SetBrakeTorque(t_brakeTorque);
+                m_Wheels[1].SetBrakeTorque(t_brakeTorque);
+                m_Wheels[2].SetBrakeTorque(t_brakeTorque);
+                m_Wheels[3].SetBrakeTorque(t_brakeTorque);
+                break;
+        }
+    }
+
+    public override void Release(bool destroy = false)
+    {
+        base.Release(destroy);
         throw new NotImplementedException();
     }
 }

@@ -6,7 +6,7 @@ using System;
 /// 轮胎,负责，驱动轮胎转动，刹车和转向
 /// </summary>
 [ExecuteInEditMode]
-public class Wheel : MonoBase, IWheel, IRelease
+public class Wheel : MonoBase, IWheel
 {
     /// <summary>
     /// 主轮胎
@@ -83,8 +83,9 @@ public class Wheel : MonoBase, IWheel, IRelease
 
     public override void Init()
     {
+        base.Init();
         //查找wheelCollider和wheelMesh
-		m_brakeWheelCollider2.mass=m_brakeWheelCollider.mass=m_masterWheelCollider.mass = m_mass;
+        m_brakeWheelCollider2.mass=m_brakeWheelCollider.mass=m_masterWheelCollider.mass = m_mass;
 		m_brakeWheelCollider2.radius=m_brakeWheelCollider.radius=m_masterWheelCollider.radius = m_radius;
         m_brakeWheelCollider.steerAngle = 45;
         m_brakeWheelCollider2.steerAngle = -45;
@@ -178,8 +179,9 @@ public class Wheel : MonoBase, IWheel, IRelease
         m_wheelMesh.transform.rotation = quat;
     }
 
-    public void Release(bool destroy = false)
+    public override void Release(bool destroy = false)
     {
+        base.Release(destroy);
         throw new NotImplementedException();
     }
 }
